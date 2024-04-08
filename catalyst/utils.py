@@ -6,14 +6,16 @@ hartree2kcalmol = 627.5094740631
 
 
 @dataclass
-class Individual:
-    rdkit_mol: Chem.rdchem.Mol = field(repr=False, compare=False)
+class Individual: # I should add to this class the additional terms for the fitness function. #GALC change 20/02/24
+    rdkit_mol: Chem.rdchem.Mol = field(repr=False, compare=False) #Here I will save the structure of the complex  DBA.Suc
     idx: str = field(default=None, compare=True, repr=True)
     smiles: str = field(init=False, compare=True, repr=True)
     score: float = field(default=None, repr=False, compare=False)
     energy: float = field(default=None, repr=False, compare=False)
     sa_score: float = field(default=None, repr=False, compare=False)
-    structure: tuple = field(default=None, compare=False, repr=False)
+    structure: tuple = field(default=None, compare=False, repr=False) #Here I will save the structure of the complex DBA.Suc
+    #pH: float = field(default=None, repr=False, compare=False) #pH calculted from pKa_higher + 1
+    #BOH_fit: float = field(default=None, repr=False, compare=False)#Difference between the dot products of the free DBA and the DBA.Suc complex to measure how far is the position of the boronic groups in the free DBA respect the optimal bonding in the DBA.Suc complex.
 
     def __post_init__(self):
         self.smiles = Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(self.rdkit_mol)))

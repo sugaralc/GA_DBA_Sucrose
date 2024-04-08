@@ -16,12 +16,9 @@ import mutate as mu
 from catalyst import ts_scoring
 from catalyst.utils import Individual
 from sa import neutralize_molecules, sa_target_score_clipped
-import os
-import xyz2mol as x2m
-import DBA_GA_utils
 
 SLURM_SETUP = {
-    "slurm_partition": "FULL",
+    "slurm_partition": "kemi1",
     "timeout_min": 30,
     "slurm_array_parallelism": 10,
 }
@@ -69,39 +66,16 @@ def catch(func, *args, handle=lambda e: e, **kwargs):
         return handle(e)
 
 
-def make_initial_population(population_size, directory, rand=True): #Here I should use my implementation with xyz files to Chem.Mol
-    linkers = []
-    cores = []
-    cmplxs = []
-    cmplxs_xyz = []    
-
-    if rand:
-        xyzfiles = heapq.nlargest(population_size, os.listdir(directory), key=lambda L: random.random())
+def make_initial_population(population_size, file_name, random=True):
+    if random:
+        with open(file_name) as fin:
+            sample = heapq.nlargest(population_size, fin, key=lambda L: random.random())
     else:
-        xyzfiles = os.listdir(directory)
-        
-    for xyzfile in xyzfiles:
-        file = directory / xyzfile
-        atoms, charge_read, coordinates = x2m.read_xyz_file(file)
-        chrg = -2
-        if xyzfile == 'cmplx113.xyz':
-            chrg = 0
-        elif xyzfile == 'cmplx114.xyz':
-            chrg = -1
-        raw_mol = x2m.xyz2mol(atoms, coordinates, charge=chrg)
-        Chem.SanitizeMol(raw_mol[0])
-        new_core, new_linkHs, core_xyz = DBA_GA_utils.core_linker_frag(raw_mol[0],coordinates)
-        new_link = Chem.RemoveHs(new_linkHs)
+        with open(file_name) as fin:
+            sample = [smiles for smiles in fin][:population_size]
+    population = [Chem.MolFromSmiles(smi.rstrip()) for smi in sample]
 
-        new_link.SetProp('pKaglcyl',str(8.8))
-        new_link.SetProp('pKafrcyl',str(8.8))
-    
-        linkers.append(new_link)
-        cores.append(new_core)
-        cmplxs.append(raw_mol[0])
-        cmplxs_xyz.append(coordinates)
-    
-    return linkers, cores, cmplxs, cmplxs_xyz
+    return population
 
 
 def calculate_normalized_fitness(scores):
@@ -159,9 +133,9 @@ def reproduce(mating_pool, population_size, mutation_rate, molecule_filter, gene
             parent = random.choice(mating_pool)
             mutated_child = mu.mutate(parent.rdkit_mol, 1, molecule_filter)
             if mutated_child != None:
-                idx = (generation, counter) #Here idx is a string and is printed like (0, 1)
-                counter += 1                #for the second individual (1) in the firs generation (0)
-                mutated_child = Individual( #GALC change 20/02/24
+                idx = (generation, counter)
+                counter += 1
+                mutated_child = Individual(
                     rdkit_mol=mutated_child,
                     idx=idx,
                 )
@@ -196,8 +170,7 @@ def reweigh_scores_by_sa(population: List[Chem.Mol], scores: List[float]) -> Lis
     return sa_scores, [
         ns * sa for ns, sa in zip(scores, sa_scores)
     ]  # rescale scores and force list type
-    #I should understand and decide if the scores should be already weigthed at this point, or 
-    #or make the weigthing at this point. GALC 20/02/24.
+
 
 def print_results(population, fitness, generation):
     print(f"\nGeneration {generation+1}", flush=True)
@@ -207,7 +180,7 @@ def print_results(population, fitness, generation):
                 [ind.idx, fit, ind.score, ind.energy, ind.sa_score, ind.smiles]
                 for ind, fit in zip(population, fitness)
             ],
-            headers=[  #Modify here to include the new terms in the fitness function. GALC change 20/02/24
+            headers=[
                 "idx",
                 "normalized fitness",
                 "score",
@@ -223,8 +196,7 @@ def print_results(population, fitness, generation):
 def GA(args):
     (
         population_size,
-        #file_name,
-        molecules_directory,
+        file_name,
         scoring_function,
         generations,
         mating_pool_size,
@@ -245,7 +217,7 @@ def GA(args):
     generations_file = Path(path) / "generations.gen"
     generations_list = []
 
-    molecules, cores, complexes, complexes_xyz = make_initial_population(population_size, molecules_directory, rand=True)
+    molecules = make_initial_population(population_size, file_name, random=False)
 
     # write starting popultaion
     pop_file = Path(path) / "starting_pop.smi"
@@ -259,14 +231,12 @@ def GA(args):
 
     prescores = [energy - 100 for energy in energies]
     sa_scores, scores = reweigh_scores_by_sa(neutralize_molecules(molecules), prescores)
-    #neutralize_molecules is needed to calculate the sa_scores. Inside "reweigh_scores_by_sa" is calculated
-    #the sa_score for each molecule.
 
-    population = [    #Modify here to add the new elements for the fitness function. 
-        Individual(   #Search the other parts of the code to make the corresponding changes. GALC change 20/02/24
-            idx=idx,  #Class function defined in catalyst/utils.py and imported as 
-            rdkit_mol=mol, #"from catalyst.utils import Individual" in the header section of this file.
-            score=score,   # Add here the pH and BOH_fit parameters for the fitness function.
+    population = [
+        Individual(
+            idx=idx,
+            rdkit_mol=mol,
+            score=score,
             energy=energy,
             sa_score=sa_score,
             structure=structure,
@@ -278,10 +248,10 @@ def GA(args):
     population = sanitize(population, population_size, False)
 
     fitness = calculate_fitness(
-        [ind.score for ind in population], #Here ind is the Individual class in the population array.
-        minimization,                      #Then, ind.score is the attribute score of the class in Individual.
-        selection_method,                  #Therefore, in my case the score should be already weighted at this point.
-        selection_pressure,                #GALC change 20/02/24
+        [ind.score for ind in population],
+        minimization,
+        selection_method,
+        selection_pressure,
     )
     fitness = calculate_normalized_fitness(fitness)
 
@@ -347,34 +317,31 @@ def GA(args):
 if __name__ == "__main__":
 
     package_directory = Path(__file__).parent.resolve()
-    print(package_directory)
 
     co.average_size = 8.0  # 14 24.022840038202613
     co.size_stdev = 4.0  # 8 4.230907997270275
     population_size = 8
-    molecules_directory = package_directory / "linkers2classify"
-    #file_name = package_directory / "ZINC_amines.smi"
-    scoring_function = ts_scoring #See how to modify this functions to my case.
+    file_name = package_directory / "ZINC_amines.smi"
+    scoring_function = ts_scoring
     generations = 5
     mating_pool_size = population_size
     mutation_rate = 0.50
     scoring_args = None
     prune_population = True
-    seed = 1001
+    seed = 101
     minimization = True
     selection_method = "rank"
     selection_pressure = 1.5
     molecule_filters = filters.get_molecule_filters(
         ["MBH"], package_directory / "filters/alert_collection.csv"
-    ) 
+    )
     # file_name = argv[-1]
 
     path = "."
 
     args = [
         population_size,
-        #file_name,
-        molecules_directory,
+        file_name,
         scoring_function,
         generations,
         mating_pool_size,
