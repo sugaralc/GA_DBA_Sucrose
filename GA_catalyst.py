@@ -17,8 +17,7 @@ from catalyst import ts_scoring
 from catalyst.utils import Individual
 from sa import neutralize_molecules, sa_target_score_clipped
 import os
-import xyz2mol as x2m
-import DBA_GA_utils
+from DBA_GA_utils import core_linker_frag
 
 SLURM_SETUP = {
     "slurm_partition": "FULL",
@@ -70,38 +69,13 @@ def catch(func, *args, handle=lambda e: e, **kwargs):
 
 
 def make_initial_population(population_size, directory, rand=True): #Here I should use my implementation with xyz files to Chem.Mol
-    linkers = []
-    cores = []
-    cmplxs = []
-    cmplxs_xyz = []    
-
     if rand:
-        xyzfiles = heapq.nlargest(population_size, os.listdir(directory), key=lambda L: random.random())
+        sample = heapq.nlargest(population_size, os.listdir(directory), key=lambda L: random.random())
     else:
-        xyzfiles = os.listdir(directory)
-        
-    for xyzfile in xyzfiles:
-        file = directory / xyzfile
-        atoms, charge_read, coordinates = x2m.read_xyz_file(file)
-        chrg = -2
-        if xyzfile == 'cmplx113.xyz':
-            chrg = 0
-        elif xyzfile == 'cmplx114.xyz':
-            chrg = -1
-        raw_mol = x2m.xyz2mol(atoms, coordinates, charge=chrg)
-        Chem.SanitizeMol(raw_mol[0])
-        new_core, new_linkHs, core_xyz = DBA_GA_utils.core_linker_frag(raw_mol[0],coordinates)
-        new_link = Chem.RemoveHs(new_linkHs)
-
-        new_link.SetProp('pKaglcyl',str(8.8))
-        new_link.SetProp('pKafrcyl',str(8.8))
+        sample = os.listdir(directory)
+    population = [core_linker_frag(directory,xyzfile) for xyzfile in sample]
     
-        linkers.append(new_link)
-        cores.append(new_core)
-        cmplxs.append(raw_mol[0])
-        cmplxs_xyz.append(coordinates)
-    
-    return linkers, cores, cmplxs, cmplxs_xyz
+    return population
 
 
 def calculate_normalized_fitness(scores):
@@ -245,12 +219,15 @@ def GA(args):
     generations_file = Path(path) / "generations.gen"
     generations_list = []
 
-    molecules, cores, complexes, complexes_xyz = make_initial_population(population_size, molecules_directory, rand=True)
+    molecules = make_initial_population(population_size, molecules_directory, rand=True)
 
     # write starting popultaion
     pop_file = Path(path) / "starting_pop.smi"
     with open(str(generations_file.resolve()), "w+") as f:
         f.writelines([str(Chem.MolToSmiles(m) for m in molecules)])
+
+    #for molecule in molecules:
+    #    print(Chem.MolToSmiles(molecule,kekuleSmiles=True))
 
     ids = [(0, i) for i in range(len(molecules))]
     results = slurm_scoring(scoring_function, molecules, ids)

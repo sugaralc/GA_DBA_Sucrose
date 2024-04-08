@@ -9,6 +9,8 @@ from rdkit import Chem
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')
 
+import xyz2mol as x2m
+
 def dummy2BO3(mol):
     """
     Function to convert the dummy atoms *98 and *99 into boronic groups
@@ -90,10 +92,10 @@ def core_linker_frag(directory, xyzfile):
     """
     file = directory / xyzfile
     atoms, charge_read, coordinates = x2m.read_xyz_file(file)
-    raw_mol = x2m.xyz2mol(atoms, coordinates, charge=chrg)
-    mol = Chem.SanitizeMol(raw_mol[0])
-
-    frcyl = Chem.MolFromSmarts('C1(O)C(O)C(CO)OC1(CO)')
+    raw_mol = x2m.xyz2mol(atoms, coordinates, charge=charge_read)
+    Chem.SanitizeMol(raw_mol[0])
+    mol = raw_mol[0]
+    frcyl = Chem.MolFromSmarts('C1(O)C(O)C(CO)OC1(CO)')    
     frcyl_idxs = mol.GetSubstructMatch(frcyl)
     glcyl = Chem.MolFromSmarts('C1C(O)C(O)C(CO)OC1(O)')
     glcyl_idxs = mol.GetSubstructMatch(glcyl)
@@ -107,29 +109,35 @@ def core_linker_frag(directory, xyzfile):
     for atom in frag1.GetAtoms():
         if atom.GetAtomicNum() == 5:
             core = frag1 
-            linker = frag2
+            linkerH = frag2
             break
         else:
-            linker = frag1
+            linkerH = frag1
             core = frag2 
-            
-    suc_patt = list(frcyl_idxs + glcyl_idxs) 
-    suc_patt.append(B_idx_glcyl)
-    suc_patt.append(B_idx_frcyl)
-    B_idxs = [B_idx_glcyl, B_idx_frcyl]
-    for i in B_idxs:
-        for neigh in mol.GetAtomWithIdx(i).GetNeighbors():
-            if neigh.GetAtomicNum() == 8:
-                if neigh.GetIdx() in suc_patt:
-                    continue
-                else:
-                    suc_patt.append(neigh.GetIdx())
-    core_coords = []
-    suc_patt.sort()
-    for idx in suc_patt:
-        core_coords.append([mol.GetAtomWithIdx(idx).GetAtomicNum(),coordinates[idx]])
+    linker = Chem.RemoveHs(linkerH)
+    
+    if linker.HasProp('pKaglcyl') == 0:
+        linker.SetProp('pKaglcyl',str(8.8))
+    if linker.HasProp('pKafrcyl') == 0:        
+        linker.SetProp('pKafrcyl',str(8.8))
+#    suc_patt = list(frcyl_idxs + glcyl_idxs) 
+#    suc_patt.append(B_idx_glcyl)
+#    suc_patt.append(B_idx_frcyl)
+#    B_idxs = [B_idx_glcyl, B_idx_frcyl]
+#    for i in B_idxs:
+#        for neigh in mol.GetAtomWithIdx(i).GetNeighbors():
+#            if neigh.GetAtomicNum() == 8:
+#                if neigh.GetIdx() in suc_patt:
+#                    continue
+#                else:
+#                    suc_patt.append(neigh.GetIdx())
+#    core_coords = []
+#    suc_patt.sort()
+#    for idx in suc_patt:
+#        core_coords.append([mol.GetAtomWithIdx(idx).GetAtomicNum(),coordinates[idx]])
        
-    return core,linker,core_coords
+#    return core,linker,core_coords
+    return linker
 
 #def 
 #    for xyzfile in xyzfiles:
