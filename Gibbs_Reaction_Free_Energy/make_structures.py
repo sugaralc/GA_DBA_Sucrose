@@ -2,26 +2,10 @@
 Written by Gustavo Lara-Cruz 2024
 '''
 
-import copy
-import os
-import sys
-
-import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from rdkit.Geometry import Point3D
+#from rdkit.Geometry import Point3D
 from rdkit.Chem import rdForceFieldHelpers
-
-free_energy_dir = os.path.dirname(__file__)
-
-sys.path.append(free_energy_dir)
-
-#from make_structures import ConstrainedEmbedMultipleConfsMultipleFrags, connect_cat_2d
-#from utils import hartree2kcalmol
-#from xtb_utils import xtb_optimize
-
-suc_core_file = os.path.join(free_energy_dir, "Sucrose_core_dummies.mol")
-suc_core = Chem.MolFromMolFile(suc_core_file, removeHs=False, sanitize=True)
 
 def linker_core_bonding(core,linker):
     """
@@ -62,15 +46,15 @@ def linker_core_bonding(core,linker):
     em.CommitBatchEdit()
     return em.GetMol()
 
-def complex_conformer_generation(linker_child):
-    linker_child.UpdatePropertyCache(strict=False)
-    Chem.SanitizeMol(linker_child)
-    cmplx_mut = linker_core_bonding(suc_core, linker_child)
+def complex_conformer_generation(core,mol): 
+    mol.UpdatePropertyCache(strict=False)
+    Chem.SanitizeMol(mol)
+    cmplx_mut = linker_core_bonding(core, mol)
     cmplx_mut.UpdatePropertyCache(strict=False)
     cmplxh_mut = Chem.AddHs(cmplx_mut, addCoords=True)
     Chem.SanitizeMol(cmplxh_mut)
 
-    suc_core_4patt = Chem.RWMol(suc_core)
+    suc_core_4patt = Chem.RWMol(core)
     suc_core_4patt.BeginBatchEdit()
     for atom in suc_core_4patt.GetAtoms():
         #print(atom.GetIdx(),atom.GetAtomicNum())
@@ -93,6 +77,7 @@ def complex_conformer_generation(linker_child):
         maxIters = 10
         while ff.Minimize(maxIts=1000) and maxIters>0:
             maxIters -= 1
+        return cmplxh_mut
     elif AllChem.EmbedMolecule(cmplxh_mut,useRandomCoords=True) > -1:
         return cmplxh_mut
     else:
@@ -119,8 +104,8 @@ def dummy2BO3(mol):
                                  replaceAll=True)
     return ligBO3_2[0]
 
-def free_ligand_conformer_generation(linker_child):
-    free_ligand = dummy2BO3(linker_child)
+def free_ligand_conformer_generation(mol):
+    free_ligand = dummy2BO3(mol)
     free_ligand.UpdatePropertyCache(strict=False)
     Chem.SanitizeMol(free_ligand)
     free_ligandH = Chem.AddHs(free_ligand, addCoords=True)
@@ -132,6 +117,7 @@ def free_ligand_conformer_generation(linker_child):
         maxIters = 10
         while ff.Minimize(maxIts=1000) and maxIters>0:
             maxIters -= 1
+        return free_ligand
     elif AllChem.EmbedMolecule(free_ligandH,useRandomCoords=True) > -1:
         return free_ligand
     else:
@@ -140,7 +126,6 @@ def free_ligand_conformer_generation(linker_child):
     #for i, atom in enumerate(free_ligandH.GetAtoms()):
     #    positions = free_ligandH.GetConformer().GetAtomPosition(i)
     #    print(atom.GetSymbol(), positions.x, positions.y, positions.z) 
-
 
 if __name__ == "__main__":
     linker_smi = '[98*]C1=CC=CC2=C1CC1=CC3=C(C=C1C2)CCC=C3C1=CC([99*])=CC=C1'
