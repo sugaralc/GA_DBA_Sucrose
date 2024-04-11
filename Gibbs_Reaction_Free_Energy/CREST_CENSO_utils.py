@@ -10,7 +10,8 @@ import numpy as np
 from rdkit import Chem
 # Here create a function called molecular_free_energy, 
 #def molecular_free_energy() This function should return the G(X) for the complex and
-os.environ["SCRATCH"] = f"/scratch/glara"
+os.environ["SCRATCH"] = f"/scratch/glara/"
+#os.environ["SCRATCH"] = f"/scratch/glara/tmp_TIPA"
 
 def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have the correct directory name 
     number_of_atoms = fragment.GetNumAtoms()
@@ -30,6 +31,9 @@ def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have t
                 line = " ".join((symbol, str(p.x), str(p.y), str(p.z), "\n"))
                 _file.write(line)
         file_paths.append(file_path)
+    src = '/users/glara/Carbohidrate_ligand/Sucrose-PBAs/Solvent/HostDesigner/ab-initio_screening/molecules_screening/geometries_screen/crest_tunning/conf000/results_crest_nsolv-0_job_71790/crest_conformers.xyz'
+    dst = f"{crest_path}/crest_conformers.xyz"
+    shutil.copy(src, dst)
     return file_paths
 
 def write_input_toml4crest(CREST_OPTIONS, destination="."):
@@ -64,12 +68,11 @@ def run_crest(args):
     print(f"running {xyz_files} on {numThreads} core(s) starting at {datetime.now()}")
     cwd = os.path.dirname(xyz_files)
     xyz_file = os.path.basename(xyz_files)
-    #print(f"running {xyz_file} on {numThreads} core(s) starting at {datetime.now()}")
     #user_modload = "module load user_modfiles;"
     crest_modload = f"module load CREST/{crest_version};"
     xtb_modload = "module load xtb/6.6.0;"
     slurm_modules = " ".join([crest_modload, xtb_modload])
-    cmd = f"{slurm_modules} crest-{crest_version} {xyz_file} {crest_cmd} | tee crest.out" #check here
+    cmd = f"{slurm_modules} crest-{crest_version} {xyz_file} {crest_cmd} --dry | tee crest.out" #check here
     os.environ["OMP_NUM_THREADS"] = f"{numThreads},1"
     os.environ["MKL_NUM_THREADS"] = f"{numThreads}"
     os.environ["OMP_STACKSIZE"] = "200G"
@@ -81,6 +84,14 @@ def run_crest(args):
         shell=True,
         cwd=cwd,
     )
+    filename = f'{cwd}/crest_conformers.xyz'
+    try:
+        f = open(filename,'r')
+        print(f'{filename} found.')
+        return filename
+    except FileNotFoundError:
+        print(f"Error: {filename} not found.")
+        return None
     output, err = popen.communicate()
     energy = read_energy(output, err)
     return energy
@@ -113,6 +124,7 @@ def molecular_free_energy(
     #alpb=None,
     mdtime="x1",
     input=None,
+    #name=None,
     name=None,
     cleanup=False,
     numThreads=38,
@@ -177,9 +189,12 @@ def molecular_free_energy(
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         results = executor.map(run_crest, args) #Continue here to determine how to pass the input file
                                                 #See CREST 3.0 to see the new keyword for input
+    
+    for crest_confomer_ensemble in results:
+        path_confomer_ensemble = crest_confomer_ensemble 
 
     CENSO_OPTIONS = {
-        "input": "crest_conformers.xyz",
+        "input": path_confomer_ensemble,
         "solvent": solvent,
         "charge": charge,
         "balance": "on",
