@@ -30,7 +30,7 @@ def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have t
                 line = " ".join((symbol, str(p.x), str(p.y), str(p.z), "\n"))
                 _file.write(line)
         file_paths.append(file_path)
-    return file_name
+    return file_paths
 
 def write_input_toml4crest(CREST_OPTIONS, destination="."):
     crest_path = os.path.join(destination, f"crest_job")
@@ -60,15 +60,16 @@ def write_input_toml4crest(CREST_OPTIONS, destination="."):
         _file.write(f'gbsa={CREST_OPTIONS.get("gbsa")}\n')        
 
 def run_crest(args):
-    (xyz_files, crest_cmd, numThreads, crest_version) = args
+    xyz_files, crest_cmd, numThreads, crest_version = args
     print(f"running {xyz_files} on {numThreads} core(s) starting at {datetime.now()}")
     cwd = os.path.dirname(xyz_files)
     xyz_file = os.path.basename(xyz_files)
+    #print(f"running {xyz_file} on {numThreads} core(s) starting at {datetime.now()}")
     #user_modload = "module load user_modfiles;"
-    crest_modload = "module load crest/2.12;"
+    crest_modload = f"module load CREST/{crest_version};"
     xtb_modload = "module load xtb/6.6.0;"
     slurm_modules = " ".join([crest_modload, xtb_modload])
-    cmd = f"{slurm_modules} crest-2.12 {xyz_file} {crest_cmd} | tee crest.out" #check here
+    cmd = f"{slurm_modules} crest-{crest_version} {xyz_file} {crest_cmd} | tee crest.out" #check here
     os.environ["OMP_NUM_THREADS"] = f"{numThreads},1"
     os.environ["MKL_NUM_THREADS"] = f"{numThreads}"
     os.environ["OMP_STACKSIZE"] = "200G"
@@ -115,7 +116,7 @@ def molecular_free_energy(
     name=None,
     cleanup=False,
     numThreads=38,
-    crest_version="2.12"
+    crest_version='2.12'
 ):
     # check mol input
     assert isinstance(mol, Chem.rdchem.Mol)
@@ -158,9 +159,9 @@ def molecular_free_energy(
         write_input_toml4crest(CREST_OPTIONS, destination=os.path.join(scr_dir, name))
     else:
         CREST_OPTIONS = {
-            "threads": numThreads,
-            "charge": charge,
-            "gbsa": solvent,
+            "T": numThreads,
+            "chrg": charge,
+            "g": solvent,
             "uhf": "0",
             "mdtime": mdtime,
         }
@@ -171,7 +172,7 @@ def molecular_free_energy(
     workers = np.min([numThreads, n_confs])
     cpus_per_worker = numThreads // workers
     #args = [(xyz_file, cmd, cpus_per_worker) for xyz_file in xyz_files]
-    args = (xyz_files, cmd, cpus_per_worker, crest_version)
+    args = [(xyz_file, cmd, cpus_per_worker, crest_version) for xyz_file in xyz_files]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         results = executor.map(run_crest, args) #Continue here to determine how to pass the input file
