@@ -10,8 +10,7 @@ import numpy as np
 from rdkit import Chem
 # Here create a function called molecular_free_energy, 
 #def molecular_free_energy() This function should return the G(X) for the complex and
-os.environ["SCRATCH"] = f"/scratch/glara/"
-#os.environ["SCRATCH"] = f"/scratch/glara/tmp_TIPA"
+os.environ["SCRATCH"] = f"/scratch/glara"
 
 def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have the correct directory name 
     number_of_atoms = fragment.GetNumAtoms()
@@ -31,9 +30,9 @@ def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have t
                 line = " ".join((symbol, str(p.x), str(p.y), str(p.z), "\n"))
                 _file.write(line)
         file_paths.append(file_path)
-    src = '/users/glara/Carbohidrate_ligand/Sucrose-PBAs/Solvent/HostDesigner/ab-initio_screening/molecules_screening/geometries_screen/crest_tunning/conf000/results_crest_nsolv-0_job_71790/crest_conformers.xyz'
-    dst = f"{crest_path}/crest_conformers.xyz"
-    shutil.copy(src, dst)
+    #src = '/users/glara/Carbohidrate_ligand/Sucrose-PBAs/Solvent/HostDesigner/ab-initio_screening/molecules_screening/geometries_screen/crest_tunning/conf000/results_crest_nsolv-_job_71788_4censo/crest_conformers.xyz'
+    #dst = f"{crest_path}/crest_conformers.xyz"
+    #shutil.copy(src, dst)
     return file_paths
 
 def write_input_toml4crest(CREST_OPTIONS, destination="."):
@@ -72,7 +71,7 @@ def run_crest(args):
     crest_modload = f"module load CREST/{crest_version};"
     xtb_modload = "module load xtb/6.6.0;"
     slurm_modules = " ".join([crest_modload, xtb_modload])
-    cmd = f"{slurm_modules} crest-{crest_version} {xyz_file} {crest_cmd} --dry | tee crest.out" #check here
+    cmd = f"{slurm_modules} crest-{crest_version} {xyz_file} {crest_cmd} | tee crest.out" #check here
     os.environ["OMP_NUM_THREADS"] = f"{numThreads},1"
     os.environ["MKL_NUM_THREADS"] = f"{numThreads}"
     os.environ["OMP_STACKSIZE"] = "200G"
@@ -84,39 +83,63 @@ def run_crest(args):
         shell=True,
         cwd=cwd,
     )
-    filename = f'{cwd}/crest_conformers.xyz'
-    try:
-        f = open(filename,'r')
-        print(f'{filename} found.')
-        return filename
-    except FileNotFoundError:
-        print(f"Error: {filename} not found.")
-        return None
-    output, err = popen.communicate()
-    energy = read_energy(output, err)
-    return energy
+    #Here add a way to check if crest succesfully complete the conformational sampling
 
-def read_energy(output, err):
-    if not "normal termination" in err:
+    if popen.wait() == 0:
+        filename = f'{cwd}/crest_conformers.xyz'
+        try:
+            f = open(filename,'r')
+            print(f'{filename} found.')
+            return filename
+        except FileNotFoundError:
+            print(f"Error: {filename} not found.")
+            return None
+
+def run_censo(args):
+    conf_ensemble_path, censo_cmd, numThreads, destination = args
+    cwd = os.path.join(destination, f"censo_job")
+    os.makedirs(cwd)
+    conf_ensemble = os.path.basename(conf_ensemble_path)
+    src = f"{conf_ensemble_path}"
+    dst = f"{cwd}/{conf_ensemble}"
+    shutil.copy(src, dst)
+    print(f"censo sorting of {conf_ensemble} on {numThreads} core(s) starting at {datetime.now()}")
+    user_modload = "module load user_modfiles;"
+    crest_modload = "module load censo/1.2.0_HF-3c_glara;"
+    xtb_modload = "module load xtb/6.5.1;"
+    orca_modload = "module load ORCA/5.0.4;"
+    slurm_modules = " ".join([user_modload, crest_modload, orca_modload, xtb_modload])
+    cmd = f"{slurm_modules} censo {censo_cmd} | tee censo.out" 
+    os.environ["OMP_NUM_THREADS"] = f"{numThreads},1"
+    os.environ["MKL_NUM_THREADS"] = f"{numThreads}"
+    os.environ["OMP_STACKSIZE"] = "200G"
+    popen = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+        shell=True,
+        cwd=cwd,
+    )
+
+    if popen.wait() == 0: 
+        output, err = popen.communicate()
+        free_energy = read_free_energy(output, err)
+    #I should take the file censo.best
+    return free_energy
+
+def read_free_energy(output, err):
+    if not "CENSO all done!" in output:
         raise Warning(err)
     lines = output.splitlines()
     energy = None
-    structure_block = False
-    atoms = []
-    coords = []
+    #structure_block = False
+    #atoms = []
+    #coords = []
     for l in lines:
-        if "final structure" in l:
-            structure_block = True
-        elif structure_block:
-            s = l.split()
-            if len(s) == 4:
-                atoms.append(s[0])
-                coords.append(list(map(float, s[1:])))
-            elif len(s) == 0:
-                structure_block = False
-        elif "TOTAL ENERGY" in l:
-            energy = float(l.split()[3])
-    return energy, {"atoms": atoms, "coords": coords}
+        if "<<==part1==" in l:
+            energy = float(l.split()[4])
+    return energy
 
 def molecular_free_energy(
     mol,
@@ -155,7 +178,7 @@ def molecular_free_energy(
     xyz_files = write_xyz_file4crest(mol, "crestmol", destination=os.path.join(scr_dir, name))
 
     # xtb options
-    cmd=""
+    cmd_crest = ""
     if crest_version == "3.0":
         CREST_OPTIONS = {
             "binary": str('"xtb"'),
@@ -179,18 +202,18 @@ def molecular_free_energy(
         }
         for key, value in CREST_OPTIONS.items():
             if value:
-                cmd += f" --{key} {value}"
+                cmd_crest += f" --{key} {value}"
 
     workers = np.min([numThreads, n_confs])
     cpus_per_worker = numThreads // workers
     #args = [(xyz_file, cmd, cpus_per_worker) for xyz_file in xyz_files]
-    args = [(xyz_file, cmd, cpus_per_worker, crest_version) for xyz_file in xyz_files]
+    args_crest = [(xyz_file, cmd_crest, cpus_per_worker, crest_version) for xyz_file in xyz_files]
 
+### RUNING CREST FOR CONFORMATIONAL SAMPLING AND ENSEMBLE GENERATION ###
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-        results = executor.map(run_crest, args) #Continue here to determine how to pass the input file
-                                                #See CREST 3.0 to see the new keyword for input
+        crest_results = executor.map(run_crest, args_crest) 
     
-    for crest_confomer_ensemble in results:
+    for crest_confomer_ensemble in crest_results:
         path_confomer_ensemble = crest_confomer_ensemble 
 
     CENSO_OPTIONS = {
@@ -204,16 +227,25 @@ def molecular_free_energy(
         "thresholdpart1": 6.0,
         "part2": "off",
         "thresholdpart2": 3.0,
+        "maxthreads":numThreads,
+        "omp":1,
+        "balance":"on",
     }
 
-    energies = []
-    geometries = []
-    for e, g in results:
-        energies.append(e)
-        geometries.append(g)
+    cmd_censo = ""
+    for key, value in CENSO_OPTIONS.items():
+        if value:
+            cmd_censo += f" --{key} {value}"
+    
+    censo_destination=os.path.join(scr_dir, name)
+    args_censo = [(path_confomer_ensemble, cmd_censo, cpus_per_worker, censo_destination)]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        censo_results = executor.map(run_censo, args_censo) 
 
-    minidx = np.argmin(energies)
+    for energy in censo_results:
+        censo_free_energy = energy
 
     # Clean up
     if cleanup:
         shutil.rmtree(name)
+    return censo_free_energy
