@@ -105,7 +105,7 @@ def dummy2BO3(mol):
     return ligBO3_2[0]
 
 def free_ligand_conformer_generation(mol):
-    free_ligand = dummy2BO3(mol)
+    free_ligand = dummy2BO3(mol) 
     free_ligand.UpdatePropertyCache(strict=False)
     Chem.SanitizeMol(free_ligand)
     free_ligandH = Chem.AddHs(free_ligand, addCoords=True)
@@ -117,12 +117,30 @@ def free_ligand_conformer_generation(mol):
         maxIters = 10
         while ff.Minimize(maxIts=1000) and maxIters>0:
             maxIters -= 1
-        return free_ligand
+        return free_ligandH
     elif AllChem.EmbedMolecule(free_ligandH,useRandomCoords=True) > -1:
-        return free_ligand
+        return free_ligandH
     else:
         return None
-    
+
+def conformer_generation(mol):
+    mol.UpdatePropertyCache(strict=False)
+    Chem.SanitizeMol(mol)
+    molH = Chem.AddHs(mol, addCoords=True)
+    molH.UpdatePropertyCache(strict=False)
+    Chem.SanitizeMol(molH)
+
+    if AllChem.EmbedMolecule(molH,randomSeed=0xf00d,useRandomCoords=True) > -1:
+        ff = rdForceFieldHelpers.UFFGetMoleculeForceField(molH)
+        maxIters = 10
+        while ff.Minimize(maxIts=1000) and maxIters>0:
+            maxIters -= 1
+        return molH
+    elif AllChem.EmbedMolecule(free_ligandH,useRandomCoords=True) > -1:
+        return molH
+    else:
+        return None
+
     #for i, atom in enumerate(free_ligandH.GetAtoms()):
     #    positions = free_ligandH.GetConformer().GetAtomPosition(i)
     #    print(atom.GetSymbol(), positions.x, positions.y, positions.z) 
