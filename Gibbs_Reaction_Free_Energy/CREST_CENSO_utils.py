@@ -147,10 +147,9 @@ def molecular_free_energy(
     #alpb=None,
     mdtime="x1",
     input=None,
-    #name=None,
     name=None,
     cleanup=False,
-    numThreads=38,
+    numThreads=1,
     crest_version='2.12'
 ):
     # check mol input
