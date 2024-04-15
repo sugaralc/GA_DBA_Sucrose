@@ -8,8 +8,6 @@ from datetime import datetime
 
 import numpy as np
 from rdkit import Chem
-# Here create a function called molecular_free_energy, 
-#def molecular_free_energy() This function should return the G(X) for the complex and
 os.environ["SCRATCH"] = f"/scratch/glara"
 
 def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have the correct directory name 
@@ -40,7 +38,6 @@ def write_input_toml4crest(CREST_OPTIONS, destination="."):
     file_name = f"input.toml"
     file_path = os.path.join(crest_path, file_name)
     with open(file_path, "w") as _file:
-        #_file.write(chr(35)This is a CREST input file)\n")
         _file.write('#This is a CREST input file\n')
         _file.write(f'input="{CREST_OPTIONS.get("input")}"\n')
         _file.write(f'threads={CREST_OPTIONS.get("threads")}\n')
@@ -83,17 +80,32 @@ def run_crest(args):
         shell=True,
         cwd=cwd,
     )
-    #Here add a way to check if crest succesfully complete the conformational sampling
 
     if popen.wait() == 0:
-        filename = f'{cwd}/crest_conformers.xyz'
+        conf_ensemble_path = f'{cwd}/crest_conformers.xyz'
         try:
-            f = open(filename,'r')
-            print(f'{filename} found.')
-            return filename
+            f = open(conf_ensemble_path,'r')
+            print(f'{conf_ensemble_path} found.')
+            output, err = popen.communicate()
+            S_conf = read_S_conf(output, err)
+            if S_conf == None:
+                print(f"Error: S_conf not found.")
+                return None 
+            else:
+                return conf_ensemble_path, S_conf
         except FileNotFoundError:
-            print(f"Error: {filename} not found.")
+            print(f"Error: {conf_ensemble_path} not found.")
             return None
+
+def read_S_conf(output, err):
+    if not "CREST terminated normally" in output:
+        raise Warning(err)
+    lines = output.splitlines()
+    S_conf = None
+    for l in lines:
+        if "ensemble entropy" in l:
+            S_conf = float(l.split()[8])
+    return S_conf
 
 def run_censo(args):
     conf_ensemble_path, censo_cmd, numThreads, destination = args
@@ -133,9 +145,6 @@ def read_free_energy(output, err):
         raise Warning(err)
     lines = output.splitlines()
     energy = None
-    #structure_block = False
-    #atoms = []
-    #coords = []
     for l in lines:
         if "<<==part1==" in l:
             energy = float(l.split()[4])
@@ -212,8 +221,9 @@ def molecular_free_energy(
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         crest_results = executor.map(run_crest, args_crest) 
     
-    for crest_confomer_ensemble in crest_results:
-        path_confomer_ensemble = crest_confomer_ensemble 
+    for path, s in crest_results:
+        path_confomer_ensemble = path
+        crest_S_conf = s
 
     CENSO_OPTIONS = {
         "input": path_confomer_ensemble,
@@ -247,4 +257,4 @@ def molecular_free_energy(
     # Clean up
     if cleanup:
         shutil.rmtree(name)
-    return censo_free_energy
+    return censo_free_energy, crest_S_conf
