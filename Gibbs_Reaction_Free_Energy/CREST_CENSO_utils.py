@@ -8,6 +8,9 @@ from datetime import datetime
 
 import numpy as np
 from rdkit import Chem
+#from LogP_OW import LogP_ow
+from utils import hartree2kcalmol
+R_gas = 1.98720425864083/1000
 os.environ["SCRATCH"] = f"/scratch/glara"
 
 def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have the correct directory name 
@@ -80,7 +83,7 @@ def run_crest(args):
         shell=True,
         cwd=cwd,
     )
-
+    
     if popen.wait() == 0:
         conf_ensemble_path = f'{cwd}/crest_conformers.xyz'
         try:
@@ -133,12 +136,12 @@ def run_censo(args):
         shell=True,
         cwd=cwd,
     )
-
-    if popen.wait() == 0: 
-        output, err = popen.communicate()
-        free_energy = read_free_energy(output, err)
+    popen.communicate()
+    #if popen.wait() == 0: 
+    output, err = popen.communicate()
+    free_energy = read_free_energy(output, err)
     #I should take the file censo.best
-    return free_energy
+    return free_energy, cwd
 
 def read_free_energy(output, err):
     if not "CENSO all done!" in output:
@@ -150,6 +153,99 @@ def read_free_energy(output, err):
             energy = float(l.split()[4])
     return energy
 
+def write_orca_inputs(args):
+    path_censobest = args[0]
+    destination = args[1]
+    solvent = args[2]
+    numThreads = args[3]
+    charge = args[4]
+    spin = args[5]
+    #Add here the agrs way to pass the arguments from one side to the other.   
+    #LogP_path = os.path.join(destination, "LogP")
+    #os.makedirs(LogP_path)
+    if solvent == "1-octanol":
+        path_orca_workdir = os.path.join(destination, "octanol")
+        os.makedirs(path_orca_workdir) 
+        file_name = "G_octanol.inp"
+        orca_input_path = os.path.join(path_orca_workdir,file_name)
+    elif solvent == "water":
+        path_orca_workdir = os.path.join(destination, "water")
+        os.makedirs(path_orca_workdir)
+        file_name = "G_water.inp"
+        orca_input_path = os.path.join(path_orca_workdir,file_name)
+
+    with open(orca_input_path, "w") as _file:
+            _file.write(f"!Opt r2scan-3c VeryTightSCF NumFreq\n")
+            _file.write(f'%base "Gibss_free_energy"\n')
+            _file.write(f'%pal nproc {numThreads}\n')
+            _file.write(f'end\n')
+            _file.write(f'%maxcore 10000\n')
+            _file.write(f'%cpcm\n')
+            _file.write(f'smd true\n')
+            _file.write(f'SMDsolvent "{solvent}"\n')
+            _file.write(f'end\n')
+            #_file.write(f'%geom\n')
+            #_file.write(f'maxiter 1000\n')
+            #_file.write(f'end\n')
+            _file.write(f'\n')
+            _file.write(f'* xyzfile {charge} {spin} censo_best.xyz\n')
+            _file.write(f'\n')
+    
+    #conf_ensemble = os.path.basename(conf_ensemble_path)
+    src = f"{path_censobest}/coord.enso_best"
+    dst = f'{path_orca_workdir}/censo_best.tmol'
+    shutil.copy(src, dst)
+    return orca_input_path
+
+def read_G_mol(output, err):
+    if not "****ORCA TERMINATED NORMALLY****" in output:
+        raise Warning(err)
+    lines = output.splitlines()
+    G_mol = None
+    for l in lines:
+        if "Final Gibbs free energy" in l:
+            G_mol = float(l.split()[5])
+    return G_mol
+
+#def LogP_ow(
+#    censo_dir=None,
+#    solvent="1-octanol",
+#    LogP_dir=None,
+#    charge=-2,
+#    spin=1,
+#    numThreads=1
+#    ): #Here added the input arguments including the most estable conformer from censo
+
+def LogP_ow(args):
+    censo_dir, solvent, LogP_dir, charge, numThreads = args
+    spin = 1 
+    orca_input_args = (censo_dir,LogP_dir,solvent,numThreads,charge,spin)
+    path_orca_input = write_orca_inputs(orca_input_args)
+    cwd = os.path.dirname(path_orca_input)
+    orca_input = os.path.basename(path_orca_input)
+    orca_modload = "module load ORCA/5.0.4;"
+    tmol2xyz = "obabel censo_best.tmol -O censo_best.xyz;"
+    cmd_orca = f"{tmol2xyz} {orca_modload} $ORCA_BIN/orca {orca_input} | tee orca.out"
+    print(f"calculating LogP for the free ligand on {numThreads} core(s) starting at {datetime.now()}")
+    popen = subprocess.Popen(
+        cmd_orca,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+        shell=True,
+        cwd=cwd,
+    )
+    popen.communicate()
+    output, err = popen.communicate()
+    #if popen.wait() == 0:
+        #output, err = popen.communicate()
+    G_mol = read_G_mol(output, err)
+    if G_mol == None:
+        print(f"Error: Final Gibss free energy not found.")
+        return None 
+    else:
+        return G_mol
+
 def molecular_free_energy(
     mol,
     solvent="h2o",
@@ -157,6 +253,7 @@ def molecular_free_energy(
     mdtime="x1",
     input=None,
     name=None,
+    calc_LogP_OW=False,
     cleanup=False,
     numThreads=1,
     crest_version='2.12'
@@ -251,10 +348,51 @@ def molecular_free_energy(
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         censo_results = executor.map(run_censo, args_censo) 
 
-    for energy in censo_results:
-        censo_free_energy = energy
+    for e, path in censo_results:
+        censo_free_energy = e
+        censo_dirpath = path
+    
+    LogP = 0
+    if calc_LogP_OW:
+        destination=os.path.join(scr_dir, name)
+        LogP_path = os.path.join(destination, "LogP")
+        os.makedirs(LogP_path)
+        LogP_solvs = ["water","1-octanol"]
+        G4LogP = []
+
+        for LogP_solv in LogP_solvs: 
+            args_LogP = [(censo_dirpath,LogP_solv,LogP_path,charge,cpus_per_worker)]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+                logp_results = executor.map(LogP_ow, args_LogP) 
+
+            for e in logp_results:
+                G4LogP.append(e)
+
+        #G_water = LogP_ow(
+        #censo_dir=censo_dirpath,
+        #solvent="water",
+        #LogP_dir=LogP_path,
+        #charge=charge,
+        #numThreads=cpus_per_worker
+        #)
+
+        #with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        #    censo_results = executor.map(LogP_ow, args_LogP) 
+
+        #for e in free_energy:
+        #    G_octanol = e
+
+        #G_octanol = LogP_ow(
+        #censo_dir=censo_dirpath,
+        #solvent="1-octanol",
+        #LogP_dir=LogP_path,
+        #charge=charge,
+        #numThreads=cpus_per_worker
+        #)
+
+        LogP = -(G4LogP[1] - G4LogP[0])*hartree2kcalmol/(2.303*R_gas*298.15)
 
     # Clean up
     if cleanup:
         shutil.rmtree(name)
-    return censo_free_energy, crest_S_conf
+    return censo_free_energy, crest_S_conf, LogP
