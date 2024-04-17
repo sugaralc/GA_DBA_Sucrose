@@ -13,7 +13,7 @@ from utils import hartree2kcalmol
 R_gas = 1.98720425864083/1000
 os.environ["SCRATCH"] = f"/scratch/glara"
 
-def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have the correct directory name 
+def write_xyz_file4crest(fragment, name, destination="."): 
     number_of_atoms = fragment.GetNumAtoms()
     symbols = [a.GetSymbol() for a in fragment.GetAtoms()]
     conformers = fragment.GetConformers()
@@ -31,9 +31,6 @@ def write_xyz_file4crest(fragment, name, destination="."):#Here modify to have t
                 line = " ".join((symbol, str(p.x), str(p.y), str(p.z), "\n"))
                 _file.write(line)
         file_paths.append(file_path)
-    #src = '/users/glara/Carbohidrate_ligand/Sucrose-PBAs/Solvent/HostDesigner/ab-initio_screening/molecules_screening/geometries_screen/crest_tunning/conf000/results_crest_nsolv-_job_71788_4censo/crest_conformers.xyz'
-    #dst = f"{crest_path}/crest_conformers.xyz"
-    #shutil.copy(src, dst)
     return file_paths
 
 def write_input_toml4crest(CREST_OPTIONS, destination="."):
@@ -83,22 +80,22 @@ def run_crest(args):
         shell=True,
         cwd=cwd,
     )
-    
-    if popen.wait() == 0:
-        conf_ensemble_path = f'{cwd}/crest_conformers.xyz'
-        try:
-            f = open(conf_ensemble_path,'r')
-            print(f'{conf_ensemble_path} found.')
-            output, err = popen.communicate()
-            S_conf = read_S_conf(output, err)
-            if S_conf == None:
-                print(f"Error: S_conf not found.")
-                return None 
-            else:
-                return conf_ensemble_path, S_conf
-        except FileNotFoundError:
-            print(f"Error: {conf_ensemble_path} not found.")
-            return None
+    popen.communicate() 
+    #if popen.wait() == 0:
+    conf_ensemble_path = f'{cwd}/crest_conformers.xyz'
+    try:
+        f = open(conf_ensemble_path,'r')
+        print(f'{conf_ensemble_path} found.')
+        output, err = popen.communicate()
+        S_conf = read_S_conf(output, err)
+        if S_conf == None:
+            print(f"Error: S_conf not found.")
+            return None 
+        else:
+            return conf_ensemble_path, S_conf
+    except FileNotFoundError:
+        print(f"Error: {conf_ensemble_path} not found.")
+        return None
 
 def read_S_conf(output, err):
     if not "CREST terminated normally" in output:
@@ -160,9 +157,7 @@ def write_orca_inputs(args):
     numThreads = args[3]
     charge = args[4]
     spin = args[5]
-    #Add here the agrs way to pass the arguments from one side to the other.   
-    #LogP_path = os.path.join(destination, "LogP")
-    #os.makedirs(LogP_path)
+    
     if solvent == "1-octanol":
         path_orca_workdir = os.path.join(destination, "octanol")
         os.makedirs(path_orca_workdir) 
@@ -191,7 +186,6 @@ def write_orca_inputs(args):
             _file.write(f'* xyzfile {charge} {spin} censo_best.xyz\n')
             _file.write(f'\n')
     
-    #conf_ensemble = os.path.basename(conf_ensemble_path)
     src = f"{path_censobest}/coord.enso_best"
     dst = f'{path_orca_workdir}/censo_best.tmol'
     shutil.copy(src, dst)
@@ -207,15 +201,6 @@ def read_G_mol(output, err):
             G_mol = float(l.split()[5])
     return G_mol
 
-#def LogP_ow(
-#    censo_dir=None,
-#    solvent="1-octanol",
-#    LogP_dir=None,
-#    charge=-2,
-#    spin=1,
-#    numThreads=1
-#    ): #Here added the input arguments including the most estable conformer from censo
-
 def LogP_ow(args):
     censo_dir, solvent, LogP_dir, charge, numThreads = args
     spin = 1 
@@ -226,7 +211,7 @@ def LogP_ow(args):
     orca_modload = "module load ORCA/5.0.4;"
     tmol2xyz = "obabel censo_best.tmol -O censo_best.xyz;"
     cmd_orca = f"{tmol2xyz} {orca_modload} $ORCA_BIN/orca {orca_input} | tee orca.out"
-    print(f"calculating LogP for the free ligand on {numThreads} core(s) starting at {datetime.now()}")
+    print(f"calculating free ligand's G_{solvent} for LogP on {numThreads} core(s) starting at {datetime.now()}")
     popen = subprocess.Popen(
         cmd_orca,
         stdout=subprocess.PIPE,
@@ -237,8 +222,6 @@ def LogP_ow(args):
     )
     popen.communicate()
     output, err = popen.communicate()
-    #if popen.wait() == 0:
-        #output, err = popen.communicate()
     G_mol = read_G_mol(output, err)
     if G_mol == None:
         print(f"Error: Final Gibss free energy not found.")
@@ -282,7 +265,7 @@ def molecular_free_energy(
     charge = Chem.GetFormalCharge(mol)
     xyz_files = write_xyz_file4crest(mol, "crestmol", destination=os.path.join(scr_dir, name))
 
-    # xtb options
+    # crest options
     cmd_crest = ""
     if crest_version == "3.0":
         CREST_OPTIONS = {
@@ -321,7 +304,7 @@ def molecular_free_energy(
     for path, s in crest_results:
         path_confomer_ensemble = path
         crest_S_conf = s
-
+#censo options
     CENSO_OPTIONS = {
         "input": path_confomer_ensemble,
         "solvent": solvent,
@@ -345,13 +328,14 @@ def molecular_free_energy(
     
     censo_destination=os.path.join(scr_dir, name)
     args_censo = [(path_confomer_ensemble, cmd_censo, cpus_per_worker, censo_destination)]
+### RUNNING CENSO FOR CALCULATION OF BOLTZMANN AVERAGED MOLECULAR FREE ENERGY ###
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         censo_results = executor.map(run_censo, args_censo) 
 
     for e, path in censo_results:
         censo_free_energy = e
         censo_dirpath = path
-    
+# LogP calculation if required    
     LogP = 0
     if calc_LogP_OW:
         destination=os.path.join(scr_dir, name)
@@ -361,34 +345,13 @@ def molecular_free_energy(
         G4LogP = []
 
         for LogP_solv in LogP_solvs: 
+### RUNNING ORCA OPTIMIZATIONS WITH WATER AND 1-OCTANOL SOLVENTS FOR LogP CALCULATION ###
             args_LogP = [(censo_dirpath,LogP_solv,LogP_path,charge,cpus_per_worker)]
             with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
                 logp_results = executor.map(LogP_ow, args_LogP) 
 
             for e in logp_results:
                 G4LogP.append(e)
-
-        #G_water = LogP_ow(
-        #censo_dir=censo_dirpath,
-        #solvent="water",
-        #LogP_dir=LogP_path,
-        #charge=charge,
-        #numThreads=cpus_per_worker
-        #)
-
-        #with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-        #    censo_results = executor.map(LogP_ow, args_LogP) 
-
-        #for e in free_energy:
-        #    G_octanol = e
-
-        #G_octanol = LogP_ow(
-        #censo_dir=censo_dirpath,
-        #solvent="1-octanol",
-        #LogP_dir=LogP_path,
-        #charge=charge,
-        #numThreads=cpus_per_worker
-        #)
 
         LogP = -(G4LogP[1] - G4LogP[0])*hartree2kcalmol/(2.303*R_gas*298.15)
 
