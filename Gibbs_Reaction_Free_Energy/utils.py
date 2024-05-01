@@ -14,8 +14,8 @@ class Individual: # I should add to this class the additional terms for the fitn
     energy: float = field(default=None, repr=False, compare=False)
     sa_score: float = field(default=None, repr=False, compare=False)
     structure: tuple = field(default=None, compare=False, repr=False) #Here I will save the structure of the complex DBA.Suc
-    #pH: float = field(default=None, repr=False, compare=False) #pH calculted from pKa_higher + 1
-    #BOH_fit: float = field(default=None, repr=False, compare=False)#Difference between the dot products of the free DBA and the DBA.Suc complex to measure how far is the position of the boronic groups in the free DBA respect the optimal bonding in the DBA.Suc complex.
+    pKa_max: float = field(default=None, repr=False, compare=False) #The higher pKa of the tweezer
+    LogP: float = field(default=None, repr=False, compare=False)#Difference between the dot products of the free DBA and the DBA.Suc complex to measure how far is the position of the boronic groups in the free DBA respect the optimal bonding in the DBA.Suc complex.
 
     def __post_init__(self):
         self.smiles = Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(self.rdkit_mol)))
