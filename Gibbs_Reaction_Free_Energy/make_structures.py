@@ -46,24 +46,36 @@ def linker_core_bonding(core,linker):
     em.CommitBatchEdit()
     return em.GetMol()
 
-def complex_conformer_generation(core,mol): 
+def constrained_conformer_generation(core,mol,sucrose=True): 
     mol.UpdatePropertyCache(strict=False)
     Chem.SanitizeMol(mol)
-    cmplx_mut = linker_core_bonding(core, mol)
-    cmplx_mut.UpdatePropertyCache(strict=False)
-    cmplxh_mut = Chem.AddHs(cmplx_mut, addCoords=True)
-    Chem.SanitizeMol(cmplxh_mut)
+    #cmplx_mut = linker_core_bonding(core, mol)
+    #cmplx_mut.UpdatePropertyCache(strict=False)
+    #cmplxh_mut = Chem.AddHs(cmplx_mut, addCoords=True)
+    #Chem.SanitizeMol(cmplxh_mut)
 
-    suc_core_4patt = Chem.RWMol(core)
-    suc_core_4patt.BeginBatchEdit()
-    for atom in suc_core_4patt.GetAtoms():
-        #print(atom.GetIdx(),atom.GetAtomicNum())
-        if atom.GetAtomicNum() == 0:
-            #print('Print dummy atom',atom.GetIdx())
-            suc_core_4patt.RemoveAtom(atom.GetIdx())
-    suc_core_4patt.CommitBatchEdit()
-    Chem.SanitizeMol(suc_core_4patt)
-    suc_core_mol = suc_core_4patt.GetMol()
+    if sucrose:
+        cmplx_mut = linker_core_bonding(core, mol)
+        cmplx_mut.UpdatePropertyCache(strict=False)
+        cmplxh_mut = Chem.AddHs(cmplx_mut, addCoords=True)
+        Chem.SanitizeMol(cmplxh_mut)
+
+        suc_core_4patt = Chem.RWMol(core)
+        suc_core_4patt.BeginBatchEdit()
+        for atom in suc_core_4patt.GetAtoms():
+            #print(atom.GetIdx(),atom.GetAtomicNum())
+            if atom.GetAtomicNum() == 0:
+                #print('Print dummy atom',atom.GetIdx())
+                suc_core_4patt.RemoveAtom(atom.GetIdx())
+        suc_core_4patt.CommitBatchEdit()
+        Chem.SanitizeMol(suc_core_4patt)
+        suc_core_mol = suc_core_4patt.GetMol()
+    else:
+        suc_core_mol = Chem.AddHs(core, addCoords=True)
+        cmplx_mut = mol
+        cmplxh_mut = Chem.AddHs(cmplx_mut, addCoords=True)
+        Chem.SanitizeMol(suc_core_mol)
+        Chem.SanitizeMol(cmplxh_mut)
 
     match_child = cmplxh_mut.GetSubstructMatch(suc_core_mol)
 
@@ -103,6 +115,19 @@ def dummy2BO3(mol):
                                  Chem.MolFromSmiles('[B-](O)(O)(O)'),
                                  replaceAll=True)
     return ligBO3_2[0]
+
+def BO32H(mol):
+    """
+    Function to convert the dummy atoms *98 and *99 into boronic groups
+    """
+    #ligBO2 = Chem.ReplaceSubstructs(mol, 
+    #                                Chem.MolFromSmarts('[B-](O)(O)(O)'), 
+    #                                Chem.MolFromSmiles('B'),
+    #                                replaceAll=True)
+
+    ligBO2 = AllChem.DeleteSubstructs(mol, 
+                                 Chem.MolFromSmarts('[B-](O)(O)(O)'))
+    return ligBO2
 
 def free_ligand_conformer_generation(mol):
     free_ligand = dummy2BO3(mol) 
@@ -148,5 +173,13 @@ def conformer_generation(mol):
 if __name__ == "__main__":
     linker_smi = '[98*]C1=CC=CC2=C1CC1=CC3=C(C=C1C2)CCC=C3C1=CC([99*])=CC=C1'
     linker = Chem.MolFromSmiles(linker_smi)
+    print(Chem.MolToSmiles(linker))
+    for i, atom in enumerate(linker.GetAtoms()):
+    #    positions = free_ligandH.GetConformer().GetAtomPosition(i)
+        print(atom.GetSymbol(),atom.GetIdx()) 
     #complex_conformer_generation(linker)
-    free_ligand_conformer_generation(linker)
+    free_ligandH = free_ligand_conformer_generation(linker)
+
+    for i, atom in enumerate(free_ligandH.GetAtoms()):
+        positions = free_ligandH.GetConformer().GetAtomPosition(i)
+        print(atom.GetSymbol(), positions.x, positions.y, positions.z) 
