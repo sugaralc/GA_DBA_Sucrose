@@ -62,7 +62,8 @@ def pKaFromSimmilarity(smiles):
     idx = 0
     max = -1
     mol = dummy2BO3_sim(Chem.MolFromSmiles(smiles))
-    Chem.SanitizeMol(mol)
+    #Chem.SanitizeMol(mol)
+    Chem.GetSymmSSSR(mol)
     fp_mol = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=4086)
     for fp in PBAs_fps:
         Tan_sim = Chem.DataStructs.TanimotoSimilarity(fp_mol,fp)
