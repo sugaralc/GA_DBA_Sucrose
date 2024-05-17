@@ -1,5 +1,5 @@
 # GB-GA
-[Graph-based genetic algorithm](http://dx.doi.org/10.1039/C8SC05372C) used for "Computational evolution of new catalysts for the  Morita–Baylis–Hillman reaction"
+[Graph-based genetic algorithm](http://dx.doi.org/10.1039/C8SC05372C) used for "Computational evolution of new diboronic acid tweezers for sucrose."
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/toc_dark.png">
