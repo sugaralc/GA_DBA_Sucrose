@@ -44,19 +44,24 @@ def PBAGlcyl_linker_PBAFrcyl(linker,glcylpatt,frcylpatt):
     
     glcyl_bond = linker.GetBondBetweenAtoms(glcyl_a1, glcyl_a2)
     frcyl_bond = linker.GetBondBetweenAtoms(frcyl_a1, frcyl_a2)
-    
-    frags = Chem.FragmentOnBonds(linker, [glcyl_bond.GetIdx(),frcyl_bond.GetIdx()], \
+
+    try:    
+        frags = Chem.FragmentOnBonds(linker, [glcyl_bond.GetIdx(),frcyl_bond.GetIdx()], \
                                 dummyLabels=[(Glcyl_dLabel,Glcyl_dLabel),(Frcyl_dLabel,Frcyl_dLabel)])
     
     #print('After FragOnBonds:',Chem.MolToSmiles(frags))
 
-    try:
+    
         frag1, frag2, frag3 = Chem.GetMolFrags(frags, asMols=True)# sanitizeFrags=False)
     except:
+        print(f'WARNING: Could not fragment {Chem.MolToSmiles(linker)} into three parts. Returning None.')
         return None
-    print('Raw fragments:',Chem.MolToSmiles(frag1),Chem.MolToSmiles(frag2),Chem.MolToSmiles(frag3))
+    #print('Raw fragments:',Chem.MolToSmiles(frag1),Chem.MolToSmiles(frag2),Chem.MolToSmiles(frag3))
 
-    
+    PBAfrc4mut = None 
+    PBAglc4mut = None 
+    linker4mut = None
+
     for atom in frag1.GetAtoms():
         #print(atom.GetAtomicNum(), atom.GetIsotope(),atom.GetIdx())
         if atom.GetAtomicNum() == 0 and atom.GetIsotope() == 98:
@@ -104,16 +109,26 @@ def PBAGlcyl_linker_PBAFrcyl(linker,glcylpatt,frcylpatt):
                 if atom2.GetAtomicNum() == 0 and atom2.GetIsotope() == 97:
                     #print('frag3 is linker4mut')
                     linker4mut = frag3
-            
+
+    if PBAfrc4mut is None or PBAglc4mut is None or linker4mut is None:
+        print(f'WARNING: Could not classify the fragments {Chem.MolToSmiles(frag1)}, {Chem.MolToSmiles(frag2)}, and {Chem.MolToSmiles(frag3)}. Returning None.')
+        return None        
     #print('Fragments classification:',Chem.MolToSmiles(PBAglc4mut),Chem.MolToSmiles(PBAfrc4mut),Chem.MolToSmiles(linker4mut))  
             
-    p = [4/6, 1/6, 1/6] 
+    p = [1/3, 1/3, 1/3] 
     mut_operation = np.random.choice(['linker', 'PBAglcyl', 'PBAfrcyl'], p=p)
-    try:
-        if mut_operation == 'linker':
-            #print("Do mutation on the linker")
-            smiles = Chem.MolToSmiles(linker4mut)
+    
+    if mut_operation == 'linker':
+        #print("Do mutation on the linker")
+        smiles = Chem.MolToSmiles(linker4mut)
+        try:
             linker_mut = mu.mutate(linker4mut,1.0,'middle')
+            if linker_mut is None:
+                raise ValueError(f'WARNING: Could not perform mutation on {mut_operation} fragment of molecule {Chem.MolToSmiles(linker)}. Returning None')
+        except ValueError as e:
+            print("An exception occurred:", e)
+            return None
+        else:
             linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
             if linker.HasProp('pKaglcyl') ==1 and linker.HasProp('pKafrcyl') == 1:
                 PBAglc_child, pKaglcyl_child = PBAglc4mut, linker.GetProp('pKaglcyl')
@@ -125,39 +140,41 @@ def PBAGlcyl_linker_PBAFrcyl(linker,glcylpatt,frcylpatt):
                 PBAfrc_child = PBAfrc4mut
                 PBAfrc4mut_smi = Chem.MolToSmiles(PBAfrc4mut, kekuleSmiles=True)
                 pKafrcyl_child = pKaFromSimmilarity(PBAfrc4mut_smi)
-        elif mut_operation == 'PBAglcyl':
-            #print("Do mutation on the PBAglcyl side")
-            linker_mut = linker4mut
-            linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
-            PBAglc_child, pKaglcyl_child = PBA_mu.Glcyl()
-            if linker.HasProp('pKafrcyl') == 1:
-                PBAfrc_child, pKafrcyl_child = PBAfrc4mut, linker.GetProp('pKafrcyl')
-            else:
-                PBAfrc_child = PBAfrc4mut
-                PBAfrc4mut_smi = Chem.MolToSmiles(PBAfrc4mut, kekuleSmiles=True)
-                pKafrcyl_child = pKaFromSimmilarity(PBAfrc4mut_smi)
-        elif mut_operation == 'PBAfrcyl':
-            #print("Do mutation on the PBAfrcyl side")
-            linker_mut = linker4mut
-            linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
-            if linker.HasProp('pKaglcyl') ==1:
-                PBAglc_child, pKaglcyl_child = PBAglc4mut, linker.GetProp('pKaglcyl')
-            else:
-                PBAglc_child = PBAglc4mut
-                PBAglc4mut_smi = Chem.MolToSmiles(PBAglc4mut, kekuleSmiles=True)
-                pKaglcyl_child = pKaFromSimmilarity(PBAglc4mut_smi)
-            PBAfrc_child, pKafrcyl_child = PBA_mu.Frcyl()
-    except:
-        return None
+    elif mut_operation == 'PBAglcyl':
+        #print("Do mutation on the PBAglcyl side")
+        linker_mut = linker4mut
+        linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
+        PBAglc_child, pKaglcyl_child = PBA_mu.Glcyl()
+        if linker.HasProp('pKafrcyl') == 1:
+            PBAfrc_child, pKafrcyl_child = PBAfrc4mut, linker.GetProp('pKafrcyl')
+        else:
+            PBAfrc_child = PBAfrc4mut
+            PBAfrc4mut_smi = Chem.MolToSmiles(PBAfrc4mut, kekuleSmiles=True)
+            pKafrcyl_child = pKaFromSimmilarity(PBAfrc4mut_smi)
+    elif mut_operation == 'PBAfrcyl':
+        #print("Do mutation on the PBAfrcyl side")
+        linker_mut = linker4mut
+        linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
+        if linker.HasProp('pKaglcyl') ==1:
+            PBAglc_child, pKaglcyl_child = PBAglc4mut, linker.GetProp('pKaglcyl')
+        else:
+            PBAglc_child = PBAglc4mut
+            PBAglc4mut_smi = Chem.MolToSmiles(PBAglc4mut, kekuleSmiles=True)
+            pKaglcyl_child = pKaFromSimmilarity(PBAglc4mut_smi)
+        PBAfrc_child, pKafrcyl_child = PBA_mu.Frcyl()
 
-    if float(pKaglcyl_child) > float(pKafrcyl_child):
-        pH = float(pKaglcyl_child) + 1.0
-        linker_child_smi = protonate.protonate_mol(linker_mut_smi,pH,0.0)
-        linker_child = Chem.MolFromSmiles(linker_child_smi[0])
-    else:
-        pH = float(pKafrcyl_child) + 1.0
-        linker_child_smi = protonate.protonate_mol(linker_mut_smi,pH,0.0)
-        linker_child = Chem.MolFromSmiles(linker_child_smi[0])
+    try:
+        if float(pKaglcyl_child) > float(pKafrcyl_child):
+            pH = float(pKaglcyl_child) + 1.0
+            linker_child_smi = protonate.protonate_mol(linker_mut_smi,pH,0.0)
+            linker_child = Chem.MolFromSmiles(linker_child_smi[0])
+        else:
+            pH = float(pKafrcyl_child) + 1.0
+            linker_child_smi = protonate.protonate_mol(linker_mut_smi,pH,0.0)
+            linker_child = Chem.MolFromSmiles(linker_child_smi[0])
+    except:
+        print(f'WARNING: Could not stimate the pKa for {linker_mut_smi}. Returning None.')
+        return None
     
     cm1 = Chem.CombineMols(PBAglc_child, PBAfrc_child)
     cm = Chem.CombineMols(cm1, linker_child)
@@ -186,38 +203,49 @@ def PBAGlcyl_linker_PBAFrcyl(linker,glcylpatt,frcylpatt):
     for dummy in dummies:
         em.RemoveAtom(dummy)
     em.CommitBatchEdit()
-    em.SetProp('pKaglcyl',str(pKaglcyl_child))
-    em.SetProp('pKafrcyl',str(pKafrcyl_child))
 
-    return em.GetMol()
+    DBA_mol = Chem.MolFromSmiles(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(em.GetMol()))))    
+    #DBA_mol = Chem.MolFromSmiles(Chem.MolToSmiles(em.GetMol()))
+    DBA_mol.SetProp('pKaglcyl',str(pKaglcyl_child))
+    DBA_mol.SetProp('pKafrcyl',str(pKafrcyl_child))
+
+    return DBA_mol
 
 def PBAGlcyl_linkerPBAFrcyl(linker,glcylpatt):
     glcyl_a1, glcyl_a2 = glcylpatt[:2]
-    glcyl_bond = linker.GetBondBetweenAtoms(glcyl_a1, glcyl_a2)
-    frags = Chem.FragmentOnBonds(linker, [glcyl_bond.GetIdx()], \
-                                 dummyLabels=[(Glcyl_dLabel,Glcyl_dLabel)])
-
-    #print('After FragOnBonds:',Chem.MolToSmiles(frags))
-        
-    frag1, frag2 = Chem.GetMolFrags(frags, asMols=True)
-    for atom in frag1.GetAtoms():
-        if atom.GetAtomicNum() == 0 and atom.GetIsotope() == 98:
-            PBAglc4mut = frag1 
-            linker4mut = frag2
-            break
-        else:
-            linker4mut = frag1
-            PBAglc4mut = frag2
-        
-    #print("Breaking on glcyl side")
-    p = [4/6, 2/6]
-    mut_operation = np.random.choice(['linker', 'PBAglcyl'], p=p)   
 
     try:
-        if mut_operation == 'linker':
-            #print("Do mutation on the linker")
-            smiles = Chem.MolToSmiles(linker4mut)
+        glcyl_bond = linker.GetBondBetweenAtoms(glcyl_a1, glcyl_a2)
+        frags = Chem.FragmentOnBonds(linker, [glcyl_bond.GetIdx()], \
+                                 dummyLabels=[(Glcyl_dLabel,Glcyl_dLabel)])
+    #print('After FragOnBonds:',Chem.MolToSmiles(frags))
+        frag1, frag2 = Chem.GetMolFrags(frags, asMols=True)
+        for atom in frag1.GetAtoms():
+            if atom.GetAtomicNum() == 0 and atom.GetIsotope() == 98:
+                PBAglc4mut = frag1 
+                linker4mut = frag2
+                break
+            else:
+                linker4mut = frag1
+                PBAglc4mut = frag2
+    except:
+        print(f'WARNING: Could not fragment {Chem.MolToSmiles(linker)} into two parts. Returning None.')
+        return None
+        
+    #print("Breaking on glcyl side")
+    p = [1/2, 1/2]
+    mut_operation = np.random.choice(['linker', 'PBAglcyl'], p=p)   
+
+    if mut_operation == 'linker':
+        #print("Do mutation on the linker")
+        try:
             linker_mut = mu.mutate(linker4mut,1.0,'frcyl')
+            if linker_mut is None:
+                raise ValueError(f'WARNING: Could not perform mutation on {mut_operation} fragment of molecule {Chem.MolToSmiles(linker)}. Returning None')
+        except ValueError as e:
+            print("An exception occurred:", e)
+            return None
+        else:
             linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
             pKafrcyl_child = pKaFromSimmilarity(linker_mut_smi)
             if linker.HasProp('pKaglcyl') ==1:
@@ -226,26 +254,28 @@ def PBAGlcyl_linkerPBAFrcyl(linker,glcylpatt):
                 PBAglc_child = PBAglc4mut
                 PBAglc4mut_smi = Chem.MolToSmiles(PBAglc4mut, kekuleSmiles=True)
                 pKaglcyl_child = pKaFromSimmilarity(PBAglc4mut_smi)
-        elif mut_operation == 'PBAglcyl':
-            #print("Do mutation on the PBAglcyl side")
-            linker_mut = linker4mut
-            linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
-            if linker.HasProp('pKafrcyl') == 1:
-                pKafrcyl_child = linker.GetProp('pKafrcyl')
-            else:
-                pKafrcyl_child = pKaFromSimmilarity(linker_mut_smi)
-            PBAglc_child,pKaglcyl_child = PBA_mu.Glcyl() 
+    elif mut_operation == 'PBAglcyl':
+        #print("Do mutation on the PBAglcyl side")
+        linker_mut = linker4mut
+        linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
+        if linker.HasProp('pKafrcyl') == 1:
+            pKafrcyl_child = linker.GetProp('pKafrcyl')
+        else:
+            pKafrcyl_child = pKaFromSimmilarity(linker_mut_smi)
+        PBAglc_child,pKaglcyl_child = PBA_mu.Glcyl() 
+
+    try:    
+        if float(pKaglcyl_child) > float(pKafrcyl_child):
+            pH = float(pKaglcyl_child) + 1.0
+            linker_child_smi = protonate.protonate_mol(linker_mut_smi,pH,0.0)
+            linker_child = Chem.MolFromSmiles(linker_child_smi[0])
+        else:
+            pH = float(pKafrcyl_child) + 1.0
+            linker_child_smi = protonate.protonate_mol(linker_mut_smi,pH,0.0)
+            linker_child = Chem.MolFromSmiles(linker_child_smi[0])
     except:
+        print(f'WARNING: Could not stimate the pKa for {linker_mut_smi}. Returning None.')
         return None
-        
-    if float(pKaglcyl_child) > float(pKafrcyl_child):
-        pH = float(pKaglcyl_child) + 1.0
-        linker_child_smi = protonate.protonate_mol(linker_mut_smi,pH,0.0)
-        linker_child = Chem.MolFromSmiles(linker_child_smi[0])
-    else:
-        pH = float(pKafrcyl_child) + 1.0
-        linker_child_smi = protonate.protonate_mol(linker_mut_smi,pH,0.0)
-        linker_child = Chem.MolFromSmiles(linker_child_smi[0])
         
         
     cm = Chem.CombineMols(PBAglc_child, linker_child)
@@ -266,9 +296,12 @@ def PBAGlcyl_linkerPBAFrcyl(linker,glcylpatt):
     for dummy in dummies:
         em.RemoveAtom(dummy)
     em.CommitBatchEdit()
-    em.SetProp('pKaglcyl',str(pKaglcyl_child))
-    em.SetProp('pKafrcyl',str(pKafrcyl_child))
-    return em.GetMol()
+       
+    DBA_mol = Chem.MolFromSmiles(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(em.GetMol()))))
+    DBA_mol.SetProp('pKaglcyl',str(pKaglcyl_child))
+    DBA_mol.SetProp('pKafrcyl',str(pKafrcyl_child))
+
+    return DBA_mol
     
 def PBAGlcyllinker_PBAfrcyl(linker,frcylpatt):
     frcyl_a1, frcyl_a2 = frcylpatt[:2]
@@ -289,13 +322,19 @@ def PBAGlcyllinker_PBAfrcyl(linker,frcylpatt):
             PBAfrc4mut = frag2
                 
     #print("Breaking on frcyl side")
-    p = [4/6, 2/6]
+    p = [1/2,1/2]
     mut_operation = np.random.choice(['linker', 'PBAfrcyl'], p=p)
 
-    try:
-        if mut_operation == 'linker':
-            #print("Do mutation on the linker")
+    if mut_operation == 'linker':
+        #print("Do mutation on the linker")
+        try:
             linker_mut = mu.mutate(linker4mut,1.0,'glcyl') #Add a try execption or if to avoid problems with None returnig from mutate
+            if linker_mut is None:
+                raise ValueError(f'WARNING: Could not perform mutation on {mut_operation} fragment of molecule {Chem.MolToSmiles(linker)}. Returning None')
+        except ValueError as e:
+            print("An exception occurred:", e)
+            return None
+        else:
             linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
             pKaglcyl_child = pKaFromSimmilarity(linker_mut_smi)
             if linker.HasProp('pKafrcyl') ==1:
@@ -304,17 +343,15 @@ def PBAGlcyllinker_PBAfrcyl(linker,frcylpatt):
                 PBAfrc_child = PBAfrc4mut
                 PBAfrc4mut_smi = Chem.MolToSmiles(PBAfrc4mut, kekuleSmiles=True)
                 pKafrcyl_child = pKaFromSimmilarity(PBAfrc4mut_smi)
-        elif mut_operation == 'PBAfrcyl':
-            #print("Do mutation on the PBAfrcyl side")
-            linker_mut = linker4mut
-            linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
-            if linker.HasProp('pKaglcyl') == 1:
-                pKaglcyl_child = linker.GetProp('pKaglcyl')
-            else:
-                pKaglcyl_child = pKaFromSimmilarity(linker_mut_smi)
-            PBAfrc_child, pKafrcyl_child = PBA_mu.Frcyl() 
-    except:
-        return None
+    elif mut_operation == 'PBAfrcyl':
+        #print("Do mutation on the PBAfrcyl side")
+        linker_mut = linker4mut
+        linker_mut_smi = Chem.MolToSmiles(linker_mut, kekuleSmiles=True)
+        if linker.HasProp('pKaglcyl') == 1:
+            pKaglcyl_child = linker.GetProp('pKaglcyl')
+        else:
+            pKaglcyl_child = pKaFromSimmilarity(linker_mut_smi)
+        PBAfrc_child, pKafrcyl_child = PBA_mu.Frcyl()
 
     if float(pKaglcyl_child) > float(pKafrcyl_child):
         pH = float(pKaglcyl_child) + 1.0
@@ -343,9 +380,13 @@ def PBAGlcyllinker_PBAfrcyl(linker,frcylpatt):
     for dummy in dummies:
         em.RemoveAtom(dummy)
     em.CommitBatchEdit()
-    em.SetProp('pKaglcyl',str(pKaglcyl_child))
-    em.SetProp('pKafrcyl',str(pKafrcyl_child))
-    return em.GetMol()
+
+    DBA_mol = Chem.MolFromSmiles(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(em.GetMol()))))    
+    #DBA_mol = Chem.MolFromSmiles(Chem.MolToSmiles(em.GetMol()))
+    DBA_mol.SetProp('pKaglcyl',str(pKaglcyl_child))
+    DBA_mol.SetProp('pKafrcyl',str(pKafrcyl_child))
+
+    return DBA_mol
 
 def DBA_mutation(linker,idx_glcyl,glcylpatt,idx_frcyl,frcylpatt):
 
@@ -355,8 +396,8 @@ def DBA_mutation(linker,idx_glcyl,glcylpatt,idx_frcyl,frcylpatt):
         return(PBAGlcyl_linkerPBAFrcyl(linker,glcylpatt))
     elif idx_frcyl in [0,1,2] and idx_glcyl == 3:
         return(PBAGlcyllinker_PBAfrcyl(linker,frcylpatt))
-    else:
-        return None
+    #else:
+    #    return None
 
 if __name__ == "__main__":
 
