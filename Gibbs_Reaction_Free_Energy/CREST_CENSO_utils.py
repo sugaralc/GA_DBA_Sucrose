@@ -16,6 +16,7 @@ from make_structures import constrained_conformer_generation, BO32H
 
 from neutralize import neutralize_smiles
 import xyz2mol as x2m
+import LogP_ow_utils
 
 def write_xyz_file4crest(fragment, name, destination="."): 
     number_of_atoms = fragment.GetNumAtoms()
@@ -86,7 +87,6 @@ def run_crest(args):
         cwd=cwd,
     )
     popen.communicate() 
-    #if popen.wait() == 0:
     conf_ensemble_path = f'{cwd}/crest_conformers.xyz'
     try:
         f = open(conf_ensemble_path,'r')
@@ -122,10 +122,10 @@ def run_censo(args):
     shutil.copy(src, dst)
     print(f"censo sorting of {name} on {numThreads} core(s) starting at {datetime.now()}")
     user_modload = "module load user_modfiles;"
-    crest_modload = "module load censo/1.2.0_HF-3c_glara;"
+    censo_modload = "module load censo/1.2.0_HF-3c_glara;"
     xtb_modload = "module load xtb/6.5.1;"
     orca_modload = "module load ORCA/5.0.4;"
-    slurm_modules = " ".join([user_modload, crest_modload, orca_modload, xtb_modload])
+    slurm_modules = " ".join([user_modload, censo_modload, orca_modload, xtb_modload])
     cmd = f"{slurm_modules} censo {censo_cmd} | tee censo.out" 
     os.environ["OMP_NUM_THREADS"] = f"{numThreads},1"
     os.environ["MKL_NUM_THREADS"] = f"{numThreads}"
@@ -139,10 +139,9 @@ def run_censo(args):
         cwd=cwd,
     )
     popen.communicate()
-    #if popen.wait() == 0: 
     output, err = popen.communicate()
     free_energy = read_free_energy(output, err)
-    #I should take the file censo.best
+    #free_energy = np.random.uniform(0,1)
     return free_energy, cwd
 
 def read_free_energy(output, err):
@@ -196,15 +195,6 @@ def write_orca_inputs(args):
             _file.write(f'\n')
     
     _ = write_xyz_file4crest(mol_conf, xyz_name, path_orca_workdir)
-    #src = f"{path_censobest}/coord.enso_best"
-    #dst = f'{path_orca_workdir}/coord_enso_best.tmol'
-    #shutil.copy(src, dst)
-    #xyz = f'{path_orca_workdir}/coord_enso_best.xyz'
-    #os.system(f"obabel {dst} -O {xyz}")
-
-    #os.system(f"sed -i s//chrg={charge}/ {xyz}")
-    #subprocess.Popen([f"obabel {dst} -O {sdf}"], stdout=subprocess.PIPE)
-    #tmol2xyz = "obabel censo_best.tmol -O censo_best.xyz;"
     return orca_input_path
 
 def read_G_mol(output, err):
@@ -237,18 +227,6 @@ def LogP_ow(args):
     mol = Chem.MolFromSmiles(Chem.MolToSmiles(core))
     core4LogP = BO32H(core)
 
-    #print(Chem.MolToSmiles(core4LogP))
-    #for i, atom in enumerate(core4LogP.GetAtoms()):
-    #    positions = core4LogP.GetConformer().GetAtomPosition(i)
-    #    print(atom.GetSymbol(), positions.x, positions.y, positions.z)    
-
-    #suppl = Chem.SDMolSupplier(core_file, removeHs=False, sanitize=False)
-    #for core in suppl:
-    #    #print(core) look here how to solve this problem
-    #    Chem.rdDetermineBonds.DetermineBonds(mol, charge=charge)
-    #    print(Chem.MolToSmiles(core))
-    #coreB = BO32B(core)
-    #print(Chem.MolToSmiles(mol))
     neutral_smiles = neutralize_smiles([Chem.MolToSmiles(mol)])
     #print(neutral_smiles)
     neutral_mol = Chem.MolFromSmiles(neutral_smiles[0])
@@ -269,10 +247,13 @@ def LogP_ow(args):
     cwd = os.path.dirname(path_orca_input)
     orca_input = os.path.basename(path_orca_input)
 
+    #slurm_ntasks= f"scontrol update JobId={JobID} NumCPUs={numThreads};"
     orca_modload = "module load ORCA/5.0.4;"
     #tmol2xyz = "obabel censo_best.sdf -O censo_best.xyz;"
     xtb_modload = "module load xtb/6.5.1;"
-    cmd_orca = f"{orca_modload} {xtb_modload} $ORCA_BIN/orca {orca_input} | tee orca.out"
+    orca_confs = " ".join([orca_modload, xtb_modload])
+    cmd_orca = f"{orca_confs} $ORCA_BIN/orca {orca_input} | tee orca.out"
+    cmd_xtb = f"{xtb_modload} xtb "
     os.environ["OMP_NUM_THREADS"] = f"{numThreads},1"
     os.environ["MKL_NUM_THREADS"] = f"{numThreads}"
     os.environ["OMP_STACKSIZE"] = "200G"
@@ -298,7 +279,7 @@ def molecular_free_energy(
     mol,
     solvent="h2o",
     smiles=None,
-    mdtime="x0.02",
+    mdtime="0.2",
     input=None,
     name=None,
     calc_LogP_OW=False,
@@ -306,6 +287,10 @@ def molecular_free_energy(
     numThreads=1,
     crest_version='2.12'
 ):
+    #job_env = submitit.JobEnvironment()
+    #sbatch_id = job_env.job_id       
+    #print("Slurm job id from CREST_CENSO_utils.py",sbatch_id)
+
     # check mol input
     assert isinstance(mol, Chem.rdchem.Mol)
     if mol.GetNumAtoms(onlyExplicit=True) < mol.GetNumAtoms(onlyExplicit=False):
@@ -364,11 +349,15 @@ def molecular_free_energy(
     workers = np.min([numThreads, n_confs])
     cpus_per_worker = numThreads // workers
     #args = [(xyz_file, cmd, cpus_per_worker) for xyz_file in xyz_files]
-    args_crest = [(xyz_file, cmd_crest, cpus_per_worker, crest_version, name) for xyz_file in xyz_files]
+    
+    #args_crest = [(xyz_file, cmd_crest, cpus_per_worker, crest_version, name) for xyz_file in xyz_files]
+    args_crest = (xyz_files[0], cmd_crest, cpus_per_worker, crest_version, name)
 
 ### RUNING CREST FOR CONFORMATIONAL SAMPLING AND ENSEMBLE GENERATION ###
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-        crest_results = executor.map(run_crest, args_crest) 
+    #with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+    #    crest_results = executor.map(run_crest, args_crest) 
+
+    crest_results = [run_crest(args_crest)]
     
     for path, s in crest_results:
         path_confomer_ensemble = path
@@ -396,14 +385,22 @@ def molecular_free_energy(
             cmd_censo += f" --{key} {value}"
     
     censo_destination=os.path.join(scr_dir, name)
-    args_censo = [(path_confomer_ensemble, 
+    #args_censo = [(path_confomer_ensemble, 
+    #               cmd_censo, 
+    #               cpus_per_worker, 
+    #               censo_destination,
+    #               name)]
+    
+    args_censo = (path_confomer_ensemble, 
                    cmd_censo, 
                    cpus_per_worker, 
                    censo_destination,
-                   name)]
+                   name)
+    
 ### RUNNING CENSO FOR CALCULATION OF BOLTZMANN AVERAGED MOLECULAR FREE ENERGY ###
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-        censo_results = executor.map(run_censo, args_censo) 
+    #with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+    #    censo_results = executor.map(run_censo, args_censo) 
+    censo_results = [run_censo(args_censo)]
 
     for e, path in censo_results:
         censo_free_energy = e
@@ -412,42 +409,95 @@ def molecular_free_energy(
 # LogP calculation if required    
     LogP = 0
     if calc_LogP_OW:
-        destination=os.path.join(scr_dir, name)
-        LogP_path = os.path.join(destination, "LogP")
+
+        LogP_path = os.path.join(scr_dir, name, "LogP")
         os.makedirs(LogP_path)
+        
+        src = f"{censo_dirpath}/coord.enso_best"
+        dst = f'{LogP_path}/coord_enso_best.tmol'
+        shutil.copy(src, dst)
+        xyz = f'{LogP_path}/coord_enso_best.xyz'
+        os.system(f"obabel {dst} -O {xyz}")
+        os.system(f"sed -i '2s/$/charge={charge}=/' {xyz}")
+
+        core_filepath = os.path.join(LogP_path, "coord_enso_best.xyz")
+        atoms, charge_read, coordinates = x2m.read_xyz_file(core_filepath)
+        raw_mol = x2m.xyz2mol(atoms, coordinates, charge=charge_read)
+        core = raw_mol[0]
+        core = Chem.RemoveHs(core)
+        mol = Chem.MolFromSmiles(Chem.MolToSmiles(core))
+        core4LogP = BO32H(core)
+
+        neutral_smiles = neutralize_smiles([Chem.MolToSmiles(mol)])
+        neutral_mol = Chem.MolFromSmiles(neutral_smiles[0])
+        linker_conformer=constrained_conformer_generation(core4LogP,neutral_mol,sucrose=False)
+        #linker_conformer = conformer_generation(neutral_mol)
+        charge4LogP = Chem.GetFormalCharge(linker_conformer)
+
         LogP_solvs = ["water","octanol"]
         G4LogP = []
+        #cpus_per_worker = numThreads // 2
 
-        for LogP_solv in LogP_solvs: 
+        #for LogP_solv in LogP_solvs: 
 ### RUNNING ORCA OPTIMIZATIONS WITH WATER AND 1-OCTANOL SOLVENTS FOR LogP CALCULATION ###
-            args_LogP = [(censo_dirpath,
-                          LogP_solv,
-                          LogP_path,
-                          charge,
-                          cpus_per_worker,
-                          name)]
-            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-                logp_results = executor.map(LogP_ow, args_LogP) 
+        args_LogP = [(linker_conformer,
+                      solv,
+                      LogP_path,
+                      charge4LogP,
+                      cpus_per_worker,
+                      name) for solv in LogP_solvs]
+        #with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        #    logp_results = executor.map(LogP_ow, args_LogP) 
 
-            for e in logp_results:
-                G4LogP.append(e)
+        #logp_results = executor.map(LogP_ow, args_LogP) 
+        #for e in logp_results:
+        #    G4LogP.append(e)
+
+        for arg_LogP in args_LogP:
+            G4LogP.append(LogP_ow_utils.LogP_ow(arg_LogP))
+        #args_LogP = [(censo_dirpath,
+        #            LogP_solvs[1],
+        #            LogP_path,
+        #            charge,
+        #            cpus_per_worker,
+        #            name)]
+        #with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        #    logp_results = executor.map(LogP_ow, args_LogP) 
+
+        #for e in logp_results:
+        #    G4LogP.append(e)
 
         LogP = -(G4LogP[1] - G4LogP[0])*hartree2kcalmol/(2.303*R_gas*298.15)
 
     # Clean up
     if cleanup:
         shutil.rmtree(name)
+    #print(censo_free_energy, crest_S_conf, LogP)
     return censo_free_energy, crest_S_conf, LogP
 
 if __name__ == "__main__":
-    linker_smi = '[98*]C1=CC=CC2=C1CC1=CC3=C(C=C1C2)CCC=C3C1=CC([99*])=CC=C1'
-    ##linker_smi = 'CCCC'
-    smiles = Chem.MolFromSmiles(linker_smi)
-    #complex_conformer_generation(linker)
-    censo_dir = '/scratch/glara/000_000_free_ligand/censo'
-    solvent = 'water'
-    LogP_dir = '/scratch/glara/000_000_free_ligand/LogP'
-    charge = -2
-    numThreads = 38
-    args = ([censo_dir, solvent, LogP_dir, charge, numThreads])
-    LogP_ow(args)
+    #linker_smi = '[98*]C1=CC=CC2=C1CC1=CC3=C(C=C1C2)CCC=C3C1=CC([99*])=CC=C1'
+    linker_smi = 'CCCC'
+    smile = Chem.MolFromSmiles(linker_smi)
+    from make_structures import conformer_generation
+    mol = conformer_generation(smile)
+    #censo_dirpath = '/scratch/glara/000_000_free_ligand/censo'
+    #LogP_solvs = ["water","octanol"]
+    #LogP_path = '/scratch/glara/000_000_free_ligand/LogP'
+    #charge = -2
+    #cpus_per_worker = 38
+    #args = ([censo_dirpath, LogP_solvs[0], LogP_path, charge, cpus_per_worker])
+    #LogP_ow(args)
+
+    molecular_free_energy(
+        mol,
+        solvent="h2o",
+        smiles=None,
+        mdtime="x0.5",
+        input=None,
+        name="000_000_c4h12",
+        calc_LogP_OW=True,
+        cleanup=False,
+        numThreads=38,
+        crest_version='2.12'
+        )
