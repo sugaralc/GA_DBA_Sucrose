@@ -11,6 +11,8 @@ import numpy as np
 from rdkit import rdBase
 rdBase.DisableLog('rdApp.error')
 
+from DBA_GA_utils import tweezer_classification
+
 def cut(mol):
   if not mol.HasSubstructMatch(Chem.MolFromSmarts('[*]-;!@[*]')):
      return None
@@ -157,6 +159,11 @@ def crossover_non_ring(parent_A,parent_B):
 
 def linker_OK(mol,pos):
     j = 0
+
+    #patts1 = mol.GetSubstructMatches(Chem.MolFromSmarts('[R]1=,:[R]-,:[R]=,:[R]-,:[R]=,:[R]1'))
+    patts = mol.GetSubstructMatches(Chem.MolFromSmarts('[r6]'))
+    #print(patts,patts1)
+
     if pos == 'middle':
         for atom in mol.GetAtoms():
             if atom.GetAtomicNum() == 0 and atom.GetIsotope() == 96:
@@ -173,10 +180,13 @@ def linker_OK(mol,pos):
             if atom.GetAtomicNum() == 0 and atom.GetIsotope() == 98:
                 for neigh in atom.GetNeighbors():
                     if neigh.GetAtomicNum() == 6:
-                    #print(neigh.GetIsAromatic(),neigh.IsInRing())
-                        if neigh.GetIsAromatic() == True and neigh.IsInRing() == True:
+                        #print(neigh.GetIsAromatic(),neigh.IsInRing(),neigh.GetIdx(),Chem.MolToSmiles(mol))
+                        #print(patts)
+                        for patt in patts:
+                          if neigh.GetIdx() in patt:
+                        #if neigh.GetIsAromatic() == True and neigh.IsInRing() == True:
                             j += 1
-            if atom.GetAtomicNum() == 0 and atom.GetIsotope() == 97:
+            elif atom.GetAtomicNum() == 0 and atom.GetIsotope() == 97:
                 j += 1
         if j == 2:
             return True
@@ -188,8 +198,11 @@ def linker_OK(mol,pos):
             if atom.GetAtomicNum() == 0 and atom.GetIsotope() == 99:
                 for neigh in atom.GetNeighbors():
                     if neigh.GetAtomicNum() == 6:
-                    #print(neigh.GetIsAromatic(),neigh.IsInRing())
-                        if neigh.GetIsAromatic() == True and neigh.IsInRing() == True:
+                      #print(neigh.GetIsAromatic(),neigh.IsInRing(),neigh.GetIdx(),Chem.MolToSmiles(mol))
+                      #print(patts)
+                        #if neigh.GetIsAromatic() == True and neigh.IsInRing() == True:
+                      for patt in patts:
+                         if neigh.GetIdx() in patt:
                             j += 1
             if atom.GetAtomicNum() == 0 and atom.GetIsotope() == 96:
                 j += 1
@@ -219,10 +232,16 @@ def DBA_crossover_OK(mol):
                     if neigh.GetIsAromatic() == True and neigh.IsInRing() == True:
                         j += 1
                         #print('Value of j =',j)
-
     #print('Dummies',len(dummies))
     if i == 1 and j == 1 and mol.GetNumAtoms() > 18 and len(dummies) == 2:
-        return True
+            try:
+              _, _ = tweezer_classification(mol,'Glc')
+              _, _ = tweezer_classification(mol,'Frc')
+            except:
+              print("WARNING: Molecule",Chem.MolToSmiles(mol),"could not be classified after crossover operation.")
+              return False 
+            else: 
+              return True
     else:
         return False
 
