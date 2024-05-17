@@ -124,7 +124,7 @@ def mutate(mol,mutation_rate,pos):
     rxn_smarts_list[7] = aromatic_substitution(mol)
     rxn_smarts = np.random.choice(rxn_smarts_list, p=p) 
     
-    #print('mutation',rxn_smarts)
+    #print('mutation',rxn_smarts,"; Try",i)
     
     rxn = AllChem.ReactionFromSmarts(rxn_smarts)
 
@@ -133,10 +133,33 @@ def mutate(mol,mutation_rate,pos):
     new_mol_trial = rxn.RunReactants((mol,))
     
     new_mols = []
+    #print("New Molecule")
     for m in new_mol_trial:
       m = m[0]
-      #print(Chem.MolToSmiles(m),co.mol_OK(m),co.mol_OK(m),co.linker_OK(m,pos))
-      if co.mol_OK(m) and co.ring_OK(m) and co.linker_OK(m,pos):
+
+      em = Chem.RWMol(m)
+      em.BeginBatchEdit()
+      for atom in em.GetAtoms():
+        if atom.GetAtomicNum() == 0:
+          atom.SetAtomicNum(6)
+          #em.RemoveAtom(atom.GetIdx())
+          #for neigh in atom.GetNeighbors():
+          #  if not em.GetBondBetweenAtoms(atom.GetIdx(),neigh.GetIdx()):
+          #    em.AddBond(atom.GetIdx(),neigh.GetIdx(),Chem.rdchem.BondType.SINGLE)
+      em.CommitBatchEdit()
+
+      m_nodummy = em.GetMol()
+      m_nodummy.UpdatePropertyCache(strict=False)
+      Chem.GetSymmSSSR(m_nodummy)
+      Chem.GetSymmSSSR(m)
+      #smi = Chem.MolToSmiles(m_nodummy)
+      try:
+        Chem.SanitizeMol(m_nodummy)
+      except:
+        continue
+
+      #print(Chem.MolToSmiles(m),co.mol_OK(m_nodummy),co.ring_OK(m_nodummy),co.linker_OK(m,pos))
+      if co.mol_OK(m_nodummy) and co.ring_OK(m_nodummy) and co.linker_OK(m,pos):
         new_mols.append(m)
     
     if len(new_mols) > 0:
