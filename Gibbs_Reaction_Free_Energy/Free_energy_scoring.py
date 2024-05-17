@@ -24,7 +24,7 @@ R_gas = 1.985877534/1000 #kcal/mol.T units
 Temp = 298.15 #K
 H2ONormalConcentration = 55.34 #Normal concentration of water
 
-def free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
+def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
     """Calculates reaction free energy in kcal/mol between products(DBA-Suc + 4H_2O) and 
     reactants (DBA + Suc)
 
@@ -83,33 +83,35 @@ def free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
     ds = (complex_S_conf - tweezer_S_conf - sucrose_S_conf)*Temp/1000
     cluster4H2O_Gcorrected = cluster4H2O_free_energy - R_gas*Temp/hartree2kcalmol*np.log(H2ONormalConcentration/4) 
     dg = (complex_free_energy + cluster4H2O_Gcorrected  - tweezer_free_energy - sucrose_free_energy) * hartree2kcalmol
-    DG = dg - ds
+    Delta_Gibbs = dg - ds
     
     # Add the function to calculate the solvation free energy difference between octanol 
     #and water using the censo best conformer for the free ligand. 
 
-    print("Reaction Free Energy (kcal/mol) =",DG)
-    print("LogP_o/w =",LogP)
+    #Delta_Gibbs = np.random.uniform(low=-16, high=5)
+    #LogP = np.random.uniform(low=-4, high=10)
+    #print("Reaction Free Energy (kcal/mol) =",Delta_Gibbs)
+    #print("LogP_o/w =",LogP)
 
-    if DG < -15.0:
-        DG = -15.0
-    elif DG > 5.0:
-        DG = 1.0
+    if Delta_Gibbs < -15.0:
+        Delta_Gibbs = -15.0
+    elif Delta_Gibbs > 5.0:
+        Delta_Gibbs = 1.0
 
     if LogP < -3.0:
         LogP = -3.0
     elif LogP > 6.0:
         LogP = 6.0
 
-    return DG, LogP
+    return Delta_Gibbs, LogP
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
     #linker_smi = '[98*]C1=CC=CC2=C1CC1=CC3=C(C=C1C2)CCC=C3C1=CC([99*])=CC=C1'
     #linker_smi = '[98*]C1=C([C@H]2CC=CC3=C2CC2=C3CC3=C([99*])C=CC=C3C2)C=CN=C1F'
     #linker_smi = '[98*]C1=CC=CC([C@@H]2CC[C@]3(CC[C@H](C4=CC([99*])=CC=C4)C(=C)C3)C2)=C1'
     #linker_smi = '[98*]C1=CC=CC=C1[C@@H]1CC[C@@]2(C=C(C3=CC([99*])=CC=C3)CC2)C1'
-    linker_smi = '[98*]c1ccc([C@@H]2C=CC[C@]3(CC[C@@H](c4cccc([99*])c4)C(=C)C3)C2)cc1'
+#    linker_smi = '[98*]c1ccc([C@@H]2C=CC[C@]3(CC[C@@H](c4cccc([99*])c4)C(=C)C3)C2)cc1'
     #linker_smi = 'CCCC'
-    linker = Chem.MolFromSmiles(linker_smi)
+#    linker = Chem.MolFromSmiles(linker_smi)
     #complex_conformer_generation(linker)
-    free_energy_scoring(linker,ncpus=38,idx=(0,7))
+#    Free_energy_scoring(linker,ncpus=38,idx=(0,7))
