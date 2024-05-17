@@ -18,7 +18,7 @@ class Individual: # I should add to this class the additional terms for the fitn
     LogP: float = field(default=None, repr=False, compare=False)#Difference between the dot products of the free DBA and the DBA.Suc complex to measure how far is the position of the boronic groups in the free DBA respect the optimal bonding in the DBA.Suc complex.
 
     def __post_init__(self):
-        self.smiles = Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(self.rdkit_mol)))
+        self.smiles = Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(self.rdkit_mol,kekuleSmiles=True)))
 
 
 def read_xyz(content, element_symbols=False):
