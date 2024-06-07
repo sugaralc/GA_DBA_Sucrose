@@ -12,8 +12,8 @@ def score_function(energies,LogPs,pKas_max,sa_scores):
         data.append([g,logp,pka,sa])
 
     #Adding the extreme values to have the same scale in all the iterations
-    data.append([-15,-3,3,1])
-    data.append([3,6,10,10])
+    data.append([-30,-3,3,1])
+    data.append([1,6,10,10])
 
     model = scaler.fit(data)
     scaled_data = model.transform(data)
