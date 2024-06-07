@@ -7,6 +7,5 @@
     {"name":  "Enamines", "reactant":  "[$([N-;X2][C,N]=C)]", "product":  "N"},
     {"name":  "Tetrazoles", "reactant":  "[n-]", "product":  "[nH]"},
     {"name":  "Sulfoxides", "reactant":  "[$([S-]=O)]", "product":  "S"},
-    {"name":  "Amides", "reactant":  "[$([N-]C=O)]", "product":  "N"},
-    {"name":  "Boronate", "reactant":  "[B-](O)(O)(O)", "product":  "B(O)(O)"}   
+    {"name":  "Amides", "reactant":  "[$([N-]C=O)]", "product":  "N"}
 ]
