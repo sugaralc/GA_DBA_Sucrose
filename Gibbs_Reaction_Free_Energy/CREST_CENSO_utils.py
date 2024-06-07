@@ -11,10 +11,10 @@ from rdkit import Chem
 #from LogP_OW import LogP_ow
 from utils import hartree2kcalmol
 R_gas = 1.98720425864083/1000 #kcal/mol.T units
-os.environ["SCRATCH"] = f"/scratch/glara"
+#os.environ["SCRATCH"] = "/scratch/noexist/"
 from make_structures import constrained_conformer_generation, BO32H
 
-from neutralize import neutralize_smiles
+from Neutralization_workflow import Tweezer_neutralization
 import xyz2mol as x2m
 import LogP_ow_utils
 
@@ -211,7 +211,7 @@ def molecular_free_energy(
     mol,
     solvent="h2o",
     smiles=None,
-    mdtime="0.2",
+    mdtime="x0.6",
     input=None,
     name=None,
     calc_LogP_OW=False,
@@ -301,9 +301,9 @@ def molecular_free_energy(
         "charge": charge,
         "balance": "on",
         "part0": "on",
-        "thresholdpart0": 10.0,
+        "thresholdpart0": 6.0,
         "part1": "on",
-        "thresholdpart1": 6.0,
+        "thresholdpart1": 4.0,
         "part2": "off",
         "thresholdpart2": 3.0,
         "maxthreads":numThreads,
@@ -338,6 +338,20 @@ def molecular_free_energy(
         censo_free_energy = e
         censo_dirpath = path
 
+    src = f'{censo_dirpath}/coord.enso_best'
+    dst = f'{censo_dirpath}/coord_enso_best.tmol'
+    shutil.copy(src, dst)
+    xyz = f'{censo_dirpath}/coord_enso_best.xyz'
+    os.system(f"obabel {dst} -O {xyz}")
+    os.system(f"sed -i '2s/$/charge={charge}=/' {xyz}")
+
+    core_filepath = os.path.join(censo_dirpath, "coord_enso_best.xyz")
+    atoms, charge_read, coordinates = x2m.read_xyz_file(core_filepath)
+    raw_mol = x2m.xyz2mol(atoms, coordinates, charge=charge_read)
+    core = raw_mol[0]
+    core = Chem.RemoveHs(core)
+    mol_censo_best = Chem.MolFromSmiles(Chem.MolToSmiles(core))
+
 # LogP calculation if required    
     LogP = 0
     if calc_LogP_OW:
@@ -360,8 +374,11 @@ def molecular_free_energy(
         mol = Chem.MolFromSmiles(Chem.MolToSmiles(core))
         core4LogP = BO32H(core)
 
-        neutral_smiles = neutralize_smiles([Chem.MolToSmiles(mol)])
-        neutral_mol = Chem.MolFromSmiles(neutral_smiles[0])
+        if charge_read != 0:
+            neutral_mol = Tweezer_neutralization(Chem.MolToSmiles(mol))
+        #neutral_smiles = neutralize_smiles([Chem.MolToSmiles(mol)])
+        else:
+            neutral_mol = mol
         linker_conformer=constrained_conformer_generation(core4LogP,neutral_mol,sucrose=False)
         #linker_conformer = conformer_generation(neutral_mol)
         charge4LogP = Chem.GetFormalCharge(linker_conformer)
@@ -405,7 +422,7 @@ def molecular_free_energy(
     if cleanup:
         shutil.rmtree(name)
     #print(censo_free_energy, crest_S_conf, LogP)
-    return censo_free_energy, crest_S_conf, LogP
+    return censo_free_energy, crest_S_conf, LogP, mol_censo_best
 
 if __name__ == "__main__":
     #linker_smi = '[98*]C1=CC=CC2=C1CC1=CC3=C(C=C1C2)CCC=C3C1=CC([99*])=CC=C1'
