@@ -25,7 +25,7 @@ from dba_mututation import DBA_mutation
 SLURM_SETUP = {
     "slurm_partition": "FULL",
     "timeout_min": 500,
-    "slurm_array_parallelism": 20,
+    "slurm_array_parallelism": 16,
 }
 
 
@@ -325,14 +325,26 @@ def GA(args):
     )
     fitness = calculate_normalized_fitness(fitness)
 
+    score_best = 1000
+    count_score_best= 0
+    for ind in population:
+        if ind.score < score_best:
+            score_best = ind.score
+
     print_results(population, fitness, -1)
+    print("Generation, score_best, count_score_best")
+    print(0, score_best, count_score_best)
 
     for generation in range(generations):
+        if count_score_best > 10:
+            print("GA converged. count_best_score =",count_score_best)
+            break
+
         mating_pool = make_mating_pool(population, fitness, mating_pool_size)
 
         new_population = reproduce(
             mating_pool,
-            population_size,
+            population_size-mating_pool_size,
             mutation_rate,
             molecule_filters,
             generation + 1,
@@ -411,6 +423,22 @@ def GA(args):
         generations_list.append([ind.idx for ind in population])
         print_results(population, fitness, generation)
 
+        score_best_new = 1000
+
+        for ind in population:
+            if ind.score < score_best_new:
+                score_best_new = ind.score
+       
+        if score_best_new < score_best:
+            score_best = score_best_new
+            count_score_best = 0
+        else:
+            count_score_best += 1
+            
+        print("Generation, score_best, count_score_best")
+        print(generation+1, score_best, count_score_best)
+
+
     with open(str(generations_file.resolve()), "w+") as f:
         f.writelines(str(generations_list))
 
@@ -420,27 +448,27 @@ if __name__ == "__main__":
     package_directory = Path(__file__).parent.resolve()
     print(package_directory)
 
-    co.average_size = 34.022840038202613
+    co.average_size = 40.022840038202613
     co.size_stdev = 4.230907997270275
-    population_size = 15
-    molecules_directory = package_directory / "linkers2classify"
+    population_size = 32
+    molecules_directory = package_directory / "linkers32_4tunning"
     #file_name = package_directory / "ZINC_amines.smi"
     scoring_function = Free_energy_scoring 
-    generations = 5
-    mating_pool_size = 15
-    mutation_rate = 0.80
+    generations = 50
+    mating_pool_size = round(population_size*0.5)
+    mutation_rate = 0.8
     scoring_args = None
     prune_population = True
 
     from datetime import datetime
     t = datetime.now().time()
     seconds = int((t.hour * 60 + t.minute) * 60 + t.second)
-    seed = 78180
+    seed = seconds
     print('seed=',seed)
 
     minimization = True
     selection_method = "rank"
-    selection_pressure = 1.5
+    selection_pressure = 1.8
     molecule_filters = filters.get_molecule_filters(
         ["MBH"], package_directory / "filters/alert_collection.csv"
     ) 
