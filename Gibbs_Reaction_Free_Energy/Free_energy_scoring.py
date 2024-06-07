@@ -49,35 +49,43 @@ def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
         #force_constant=1e12,
     )
 
+    try:
+        complex_free_energy, complex_S_conf, _, censo_best = molecular_free_energy(
+            complex_3d,
+            solvent="h2o",
+            smiles=None,
+            name=f"{idx[0]:03d}_{idx[1]:03d}_complex",
+            calc_LogP_OW=False,
+            #input=os.path.join(catalyst_dir, "input_files/constr.inp"),
+            numThreads=ncpus,
+            cleanup=cleanup,
+        )
+    except Exception as e:
+        print(f"Error calculating the free energy and S_conf for {idx[0]:03d}_{idx[1]:03d}_complex: {e}")
+        return np.nan, np.nan
+
     # Embed free ligand. Here Perform the conformer generation for the free ligand.
     tweezer_3d = free_ligand_conformer_generation(
-        mol=linker#,
-        #numConfs=n_confs,
+        mol=censo_best,
         #pruneRmsThresh=0.1,
         #force_constant=1e12,
     )
     #tweezer_3d = conformer_generation(mol=linker)
-    complex_free_energy, complex_S_conf, _ = molecular_free_energy(
-        complex_3d,
-        solvent="h2o",
-        smiles=None,
-        name=f"{idx[0]:03d}_{idx[1]:03d}_complex",
-        calc_LogP_OW=False,
-        #input=os.path.join(catalyst_dir, "input_files/constr.inp"),
-        numThreads=ncpus,
-        cleanup=cleanup,
-    )
 
-    tweezer_free_energy, tweezer_S_conf, LogP = molecular_free_energy(
-        tweezer_3d,
-        solvent="h2o",
-        smiles=linker,
-        name=f"{idx[0]:03d}_{idx[1]:03d}_tweezer",
-        calc_LogP_OW=True,
-        #input=os.path.join(catalyst_dir, "input_files/constr.inp"),
-        numThreads=ncpus,
-        cleanup=cleanup,
-    )
+    try:
+        tweezer_free_energy, tweezer_S_conf, LogP, _ = molecular_free_energy(
+            tweezer_3d,
+            solvent="h2o",
+            smiles=linker,
+            name=f"{idx[0]:03d}_{idx[1]:03d}_tweezer",
+            calc_LogP_OW=True,
+            #input=os.path.join(catalyst_dir, "input_files/constr.inp"),
+            numThreads=ncpus,
+            cleanup=cleanup,
+        )
+    except Exception as e:
+        print(f"Error calculating the free energy and S_conf for {idx[0]:03d}_{idx[1]:03d}_tweezer: {e}")
+        return np.nan, np.nan
 
     # Calculate reaction free energy including conformational entropy
     ds = (complex_S_conf - tweezer_S_conf - sucrose_S_conf)*Temp/1000
@@ -93,9 +101,9 @@ def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
     #print("Reaction Free Energy (kcal/mol) =",Delta_Gibbs)
     #print("LogP_o/w =",LogP)
 
-    if Delta_Gibbs < -15.0:
-        Delta_Gibbs = -15.0
-    elif Delta_Gibbs > 5.0:
+    if Delta_Gibbs < -30.0:
+        Delta_Gibbs = -30.0
+    elif Delta_Gibbs > 1.0:
         Delta_Gibbs = 1.0
 
     if LogP < -3.0:
@@ -105,13 +113,13 @@ def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
 
     return Delta_Gibbs, LogP
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
     #linker_smi = '[98*]C1=CC=CC2=C1CC1=CC3=C(C=C1C2)CCC=C3C1=CC([99*])=CC=C1'
     #linker_smi = '[98*]C1=C([C@H]2CC=CC3=C2CC2=C3CC3=C([99*])C=CC=C3C2)C=CN=C1F'
     #linker_smi = '[98*]C1=CC=CC([C@@H]2CC[C@]3(CC[C@H](C4=CC([99*])=CC=C4)C(=C)C3)C2)=C1'
     #linker_smi = '[98*]C1=CC=CC=C1[C@@H]1CC[C@@]2(C=C(C3=CC([99*])=CC=C3)CC2)C1'
-#    linker_smi = '[98*]c1ccc([C@@H]2C=CC[C@]3(CC[C@@H](c4cccc([99*])c4)C(=C)C3)C2)cc1'
+    linker_smi = '[98*]c1ccc([C@@H]2C=CC[C@]3(CC[C@@H](c4cccc([99*])c4)C(=C)C3)C2)cc1'
     #linker_smi = 'CCCC'
-#    linker = Chem.MolFromSmiles(linker_smi)
+    linker = Chem.MolFromSmiles(linker_smi)
     #complex_conformer_generation(linker)
-#    Free_energy_scoring(linker,ncpus=38,idx=(0,7))
+    Free_energy_scoring(linker,ncpus=38,idx=(0,7))
