@@ -45,18 +45,20 @@ def Glcyl():
         ['FC1=CC(-[98*])=C(F)C(-[96*])=C1F', 6.8,-1], # 3,4,5-Trifluorophenylboronic acid DOI:10.1016/j.tet.2004.08.051
         ['FC1=C(F)C(-[96*])=CC(-[98*])=C1F', 6.8,-1], # 2,3,4-Trifluorophenylboronic acid DOI:10.1016/j.tet.2004.08.051
         ['FC1=CC(-[98*])=C(F)C(-[96*])=C1F', 6.7,-1], # 2,4,5-Trifluorophenylboronic acid DOI:10.1016/j.tet.2004.08.051
-        ['C-[NH+](-C)-C-C1=CC=C(-[96*])C=C1-[98*]', 5.3,-1], # 2-Dimethylaminomethylphenylboronic acid (DAPBA) DOI:10.1016/j.tet.2004.08.051
+        #['C-[NH+](-C)-C-C1=CC=C(-[96*])C=C1-[98*]', 5.3,-1], # 2-Dimethylaminomethylphenylboronic acid (DAPBA) DOI:10.1016/j.tet.2004.08.051
+        ['[98*]-C1C(-C[NH+](C)C)=CC(-[96*])=CC1', 5.3,-1], # 2-Dimethylaminomethylphenylboronic acid (DAPBA) DOI:10.1016/j.tet.2004.08.051
         ['[O-]-[N+](=O)-C1=CC(-[96*])=C(F)C(-[98*])=C1', 6.0,-1], # 2-Fluoro-5-nitrophenylboronic acid DOI:10.1016/j.tet.2004.08.051
         ['C-C1=CC(-[98*])=C[N+](-[#6]-[96*])=C1', 4.4,-1], # 5-Methylpyridine-3-boronic acid DOI:10.1016/j.tet.2004.08.051
         ['[96*]-C-[N+]1=CC=CC(-[98*])=C1', 4.4,-1], # 3-Methylpyridineboronic acid  DOI:10.1016/j.tet.2004.08.051
         ['[96*]-C1=CC=C(-C=O)C(-[98*])=C1', 7.31,-1], # 2-Formylphenilboronic acid DOI:10.3390/molecules25040799
         ['FC1=CC(-[96*])=CC(-[98*])=C1', 7.5,-1], # 3-Fluorophenilboronic acid DOI:10.3390/molecules25040799
         ['FC(F)(F)C1=CC(-[96*])=CC(-[98*])=C1', 7.85,-1], # 3-Metiltrifluorophenilboronic acid DOI:10.3390/molecules25040799       
-        ['[96*]-C1=CC(-[98*])=CC=C1S(=O)(=O)C-C-C=C', 7.1,-1], # 4-(3-butenylsulfonyl)phenylboronic acid BSPBA DOI:10.1016/j.ab.2007.09.001 Bonding to silicon trough double bond in alkyl chain
-        ['[96*]-C1=CC(-[98*])=CC=C1S(=O)(=O)N-C-C=C', 7.4 ,-1], # 4-(N-allylsulfamoyl)phenylboronic acid BSPBA DOI:10.1016/j.ab.2007.09.001 Bonding to silicon trough double bond in alkyl chain
+        #['[96*]-C1=CC(-[98*])=CC=C1S(=O)(=O)C-C-C=C', 7.1,-1], # 4-(3-butenylsulfonyl)phenylboronic acid BSPBA DOI:10.1016/j.ab.2007.09.001 Bonding to silicon trough double bond in alkyl chain
+        #['[96*]-C1=CC(-[98*])=CC=C1S(=O)(=O)N-C-C=C', 7.4 ,-1], # 4-(N-allylsulfamoyl)phenylboronic acid BSPBA DOI:10.1016/j.ab.2007.09.001 Bonding to silicon trough double bond in alkyl chain
         ['N-C1=CC(-[98*])=CC(-[96*])=C1-[N+](-[O-])=O', 7.1,-1], # (3-amino-4nitrophenyl)boronic acid DOI:10.3390/molecules25040799 Binding to silica the amino group
         ['[96*]-C1=CC(-[98*])=CC(-N-C(=O)-C=C)=C1', 8.2,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K
-        ['[96*]-C1=CC(-[98*])=CC=C1-C(=O)-N-C-C-N-C(=O)-C=C', 7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPBA) DOI:10.1039/B920319B Bonding to silicon trough double bond in alkyl chain See the review DOI: 10.1039/C5CS00013K
+        #['[96*]-C1=CC(-[98*])=CC=C1-C(=O)-N-C-C-N-C(=O)-C=C', 7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPBA) DOI:10.1039/B920319B Bonding to silicon trough double bond in alkyl chain See the review DOI: 10.1039/C5CS00013K
+        ['[96*]-C1=CC(-[98*])=CC=C1-C(=O)-N-C', 7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPBA) DOI:10.1039/B920319B Bonding to silicon trough double bond in alkyl chain See the review DOI: 10.1039/C5CS00013K Same as previous PBA but whit a reduced carbon atom.
         ['FC1=C(-[96*])C=C(-[98*])C(F)=C1-C=O', 6.5,-1], # 2,4-difluoro-3-formyl-phenylboronicacid (DFFPBA) See the review DOI: 10.1039/C5CS00013K
         #['[96*]-c1ccc2-[#6]-[#8]-[98*]-c2c1', 7.2,0], # Benzoboroxole DOI: 10.1021/jo800788s Bonding with trans 4-6 diols prefered over trans 3-4 diol as in glucose.
         #['[96*]-C-1=C-C(-[98*])=C-S-1', 8.1 ,-1], # 3-thiopeneboronic acid DOI: 10.3390/chemosensors10070251 Read this paper, has some thermochemical measures
@@ -66,10 +68,13 @@ def Glcyl():
         ['[96*]-C1=CN=CC(-[98*])=C1', 4.4, -1], # 3-pyridylboronic acid DOI:10.1039/c7sc01905j 
         ['O-C(=O)-C1=NC=C(-[98*])C=C1-[96*]', 4.2, -1], # 5-boronopicolinic acid DOI:10.1039/c7sc01905j 
         ['O-C(=O)-C1=CC=C(-[98*])C=[N+]1-C-[96*]', 4.2, -1], # 5-boronopicolinic acid DOI:10.1039/c7sc01905j 
-        ['C-C-C-N-C(=O)-C1=NC=C(-[98*])C=C1-[96*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
-        ['C-C-C-N-C(=O)-C1=CC=C(-[98*])C=[N+]1-C-[96*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C-N-C(=O)-C1=NC=C(-[98*])C=C1-[96*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        ['C-N-C(=O)-C1=NC=C(-[98*])C=C1-[96*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j ; reduced extension of the lateral carobon chain
+        #['C-C-C-N-C(=O)-C1=CC=C(-[98*])C=[N+]1-C-[96*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        ['C-N-C(=O)-C1=CC=C(-[98*])C=[N+]1-C-[96*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j ; reduced extension of the lateral carbon chain
         ['O-C(=O)-C-[N+]1=CC(-[96*])=CC(-[98*])=C1', 4.4,-1], # 3-borono-1-(carboxymethyl)pyridine DOI:10.1039/c7sc01905j
-        ['C-C-C(=O)-N-C1=CC(-[96*])=CC(-[98*])=C1', 8.3, -1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C(=O)-N-C1=CC(-[96*])=CC(-[98*])=C1', 8.3, -1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        ['C-C(=O)-N-C1=CC(-[96*])=CC(-[98*])=C1', 8.3, -1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
         ['CS(=O)(=O)C1=CC=C(-[98*])C=C1-[96*]', 7.1,-1], # 4-(methylsulfonyl)benzeneboronic acid DOI:10.1039/c7sc01905j pKa approx   
         ['FC1=NC=C(-[96*])C=C1-[98*]', 6.3,-1], # 2-Fluoro-3-pyridyl boronic acid DOI:10.1039/c7sc01905j
         ['FC1=C(-[98*])C=CC=[N+]1-C-[96*]', 6.3,-1]] # 2-Fluoro-3-pyridyl boronic acid DOI:10.1039/c7sc01905j
@@ -125,7 +130,8 @@ def Glcyl():
         ['N-C1=C(-[96*])C(-[98*])=CC=C1-[N+](-[O-])=O', 7.1,-1], # (3-amino-4nitrophenyl)boronic acid DOI: 10.1016/S1872-2040(07)60007-3 Binding to silica the amino group
         ['[96*]-C1=C(-[98*])C=CC=C1-N-C(=O)-C=C', 8.2,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K
         ['[96*]-C1=CC=C(-N-C(=O)-C=C)C=C1-[98*]', 8.2,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K
-        ['[96*]-C1=CC(=CC=C1-[98*])-C(=O)-N-C-C-N-C(=O)-C=C', 7.8 ,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)  See the review DOI: 10.1039/C5CS00013K
+        #['[96*]-C1=CC(=CC=C1-[98*])-C(=O)-N-C-C-N-C(=O)-C=C', 7.8 ,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)  See the review DOI: 10.1039/C5CS00013K
+        ['[96*]-C1=CC(=CC=C1-[98*])-C(=O)-N-C', 7.8 ,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)  See the review DOI: 10.1039/C5CS00013K ; one carbon atom eliminated
         ['FC1=CC(-[96*])=C(-[98*])C(F)=C1-C=O', 6.5,-1], # 2,4-difluoro-3-formyl-phenylboronicacid (DFFPBA) See the review DOI: 10.1039/C5CS00013K
         #['[96*]-c1cccc2-[#6]-[#8]-[98*]-c12', 7.2,0], # Benzoboroxole DOI: 10.1021/jo800788s Bonding with trans 4-6 diols prefered over trans 3-4 diol as in glucose.
         #['[#8]-[#6](=O)-c1ccc2-[#6]-[#8]-[98*]-c2c1-[96*]', 7.2,0], # Benzoboroxolebenzaldehide Binding to polimer throug carboxilic acid. Asummed to be similar to Benzoboroxole DOI: 10.1021/jo800788s
@@ -139,12 +145,16 @@ def Glcyl():
         ['[96*]-C1=NC=CC=C1-[98*]',  4.4, -1],  # 3-pyridylboronic acid DOI:10.1039/c7sc01905j
         ['O-C(=O)-C1=CC(-[96*])=C(-[98*])C=N1', 4.2, -1], # 5-boronopicolinic acid DOI:10.1039/c7sc01905j
         ['O-C(=O)-C1=CC=C(-[98*])C(-[96*])=N1', 4.2, -1], # 5-boronopicolinic acid DOI:10.1039/c7sc01905j
-        ['C-C-C-N-C(=O)-C1=CC(-[96*])=C(-[98*])C=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
-        ['C-C-C-N-C(=O)-C1=CC=C(-[98*])C(-[96*])=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C-N-C(=O)-C1=CC(-[96*])=C(-[98*])C=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        ['C-N-C(=O)-C1=CC(-[96*])=C(-[98*])C=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j ; two carbon atoms eliminated
+        #['C-C-C-N-C(=O)-C1=CC=C(-[98*])C(-[96*])=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        ['C-N-C(=O)-C1=CC=C(-[98*])C(-[96*])=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j ; two carbon atoms eliminated
         ['O-C(=O)-C-[N+]1=CC=CC(-[98*])=C1-[96*]', 4.4,-1], # 3-borono-1-(carboxymethyl)pyridine DOI:10.1039/c7sc01905j
         ['O-C(=O)-C-[N+]1=CC=C(-[96*])C(-[98*])=C1', 4.4,-1], # 3-borono-1-(carboxymethyl)pyridine DOI:10.1039/c7sc01905j
-        ['C-C-C(=O)-N-C1=CC=C(-[96*])C(-[98*])=C1', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
-        ['C-C-C(=O)-N-C1=CC=CC(-[98*])=C1-[96*]', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C(=O)-N-C1=CC=C(-[96*])C(-[98*])=C1', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        ['C-C(=O)-N-C1=CC=C(-[96*])C(-[98*])=C1', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j ; one carbon atom eliminated
+        #['C-C-C(=O)-N-C1=CC=CC(-[98*])=C1-[96*]', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        ['C-C(=O)-N-C1=CC=CC(-[98*])=C1-[96*]', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j ; one carbon atom eliminated
         ['CS(=O)(=O)C1=CC=C(-[98*])C=C1-[96*]', 7.1,-1], # 4-(methylsulfonyl)benzeneboronic acid DOI:10.1039/c7sc01905j pKa approx
         ['FC1=NC=CC(-[96*])=C1-[98*]', 6.3,-1]] # 2-Fluoro-3-pyridyl boronic acid DOI:10.1039/c7sc01905j
 
@@ -165,12 +175,14 @@ def Glcyl():
         ['[O-]-[N+](=O)-C1=CC(-[98*])=CC=C1-[96*]', 7.1,-1], # 3-Nitrophenylboronic acid 1 DOI:10.1016/j.tet.2004.08.051
         ['FC1=CC(-[98*])=C(F)C=C1-[96*]', 7.0,-1], # 2,5-Diflourophenylboronic acid DOI:10.1016/j.tet.2004.08.051
         ['[O-]-[N+](=O)-C1=CC(-[98*])=C(F)C=C1-[96*]', 6.0,-1], # 2-Fluoro-5-nitrophenylboronic acid DOI:10.1016/j.tet.2004.08.051        
-        ['[96*]-C-[N+]1=CC=C(-[98*])C=C1', 4.4,-1], # 4-Methylpyridineboronic acid DOI:10.1016/j.tet.2004.08.051
+        ['[96*]-C[N+]1=CC=C(-[98*])C=C1', 4.4,-1], # 4-Methylpyridineboronic acid DOI:10.1016/j.tet.2004.08.051
         ['[96*]-C1=CC=C(-[98*])C(-C=O)=C1', 7.31,-1], # 2-Formylphenilboronic acid DOI:10.3390/molecules25040799
         ['FC1=CC(-[98*])=CC=C1-[96*]', 7.5,-1], # 3-Fluorophenilboronic acid DOI:10.3390/molecules25040799
         ['FC(F)(F)C1=CC(-[98*])=CC=C1-[96*]', 7.85,-1], # 3-Metiltrifluorophenilboronic acid DOI:10.3390/molecules25040799
-        ['[96*]-C1=CC=C(-[98*])C=C1-N-C(=O)-C=C', 8.2 ,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K 
-        ['[96*]-C1=CC=C(-[98*])C=C1-C(=O)-N-C-C-N-C(=O)-C=C',7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)
+        #['[96*]-C1=CC=C(-[98*])C=C1-N-C(=O)-C=C', 8.2 ,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K 
+        ['[96*]-C1=CC=C(-[98*])C=C1-N-C(=O)-C', 8.2 ,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K ; one carbon atom eliminated
+        #['[96*]-C1=CC=C(-[98*])C=C1-C(=O)-N-C-C-N-C(=O)-C=C',7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)
+        ['[96*]-C1=CC=C(-[98*])C=C1-C(=O)-N-C',7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA) ; Lateral chain reduced
         #['[96*]-c1ccc2-[98*]-[#8]-[#6]-c2c1'. 7.2,0], # Benzoboroxole DOI: 10.1021/jo800788s Bonding with trans 4-6 diols prefered over trans 3-4 diol as in glucose.
         #['[#8]-[#6](=O)-c1cc2-[98*]-[#8]-[#6]-c2cc1-[96*]', 7.2,0], # Benzoboroxolebenzaldehide Binding to polimer throug carboxilic acid. Asummed to be similar to Benzoboroxole DOI: 10.1021/jo800788s
         ['FC1=NC(-[96*])=CC=C1-[98*]', 7.1,-1], # 2-fluoro-3-pyridylboronic acid or 2F-3-PyBA DOI: 10.1021/ol5036003
@@ -225,11 +237,12 @@ def Frcyl():
         ['[97*]-C1=CC=C(-C=O)C(-[99*])=C1', 7.31,-1], # 2-Formylphenilboronic acid DOI:10.3390/molecules25040799
         ['FC1=CC(-[97*])=CC(-[99*])=C1', 7.5,-1], # 3-Fluorophenilboronic acid DOI:10.3390/molecules25040799
         ['FC(F)(F)C1=CC(-[97*])=CC(-[99*])=C1', 7.85,-1], # 3-Metiltrifluorophenilboronic acid DOI:10.3390/molecules25040799       
-        ['[97*]-C1=CC(-[99*])=CC=C1S(=O)(=O)C-C-C=C', 7.1,-1], # 4-(3-butenylsulfonyl)phenylboronic acid BSPBA DOI:10.1016/j.ab.2007.09.001 Bonding to silicon trough double bond in alkyl chain
-        ['[97*]-C1=CC(-[99*])=CC=C1S(=O)(=O)N-C-C=C', 7.4 ,-1], # 4-(N-allylsulfamoyl)phenylboronic acid BSPBA DOI:10.1016/j.ab.2007.09.001 Bonding to silicon trough double bond in alkyl chain
+        #['[97*]-C1=CC(-[99*])=CC=C1S(=O)(=O)C-C-C=C', 7.1,-1], # 4-(3-butenylsulfonyl)phenylboronic acid BSPBA DOI:10.1016/j.ab.2007.09.001 Bonding to silicon trough double bond in alkyl chain
+        #['[97*]-C1=CC(-[99*])=CC=C1S(=O)(=O)N-C-C=C', 7.4 ,-1], # 4-(N-allylsulfamoyl)phenylboronic acid BSPBA DOI:10.1016/j.ab.2007.09.001 Bonding to silicon trough double bond in alkyl chain
         ['N-C1=CC(-[99*])=CC(-[97*])=C1-[N+](-[O-])=O', 7.1,-1], # (3-amino-4nitrophenyl)boronic acid DOI:10.3390/molecules25040799 Binding to silica the amino group
         ['[97*]-C1=CC(-[99*])=CC(-N-C(=O)-C=C)=C1', 8.2,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K
-        ['[97*]-C1=CC(-[99*])=CC=C1-C(=O)-N-C-C-N-C(=O)-C=C', 7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPBA) DOI:10.1039/B920319B Bonding to silicon trough double bond in alkyl chain See the review DOI: 10.1039/C5CS00013K
+        #['[97*]-C1=CC(-[99*])=CC=C1-C(=O)-N-C-C-N-C(=O)-C=C', 7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPBA) DOI:10.1039/B920319B Bonding to silicon trough double bond in alkyl chain See the review DOI: 10.1039/C5CS00013K
+        ['[97*]-C1=CC(-[99*])=CC=C1-C(=O)-N-C', 7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPBA) DOI:10.1039/B920319B Bonding to silicon trough double bond in alkyl chain See the review DOI: 10.1039/C5CS00013K
         ['FC1=C(-[97*])C=C(-[99*])C(F)=C1-C=O', 6.5,-1], # 2,4-difluoro-3-formyl-phenylboronicacid (DFFPBA) See the review DOI: 10.1039/C5CS00013K
         #['[97*]-c1ccc2-[#6]-[#8]-[99*]-c2c1', 7.2,0], # Benzoboroxole DOI: 10.1021/jo800788s Bonding with trans 4-6 diols prefered over trans 3-4 diol as in glucose.
         #['[97*]-C-1=C-C(-[99*])=C-S-1', 8.1 ,-1], # 3-thiopeneboronic acid DOI: 10.3390/chemosensors10070251 Read this paper, has some thermochemical measures
@@ -239,10 +252,13 @@ def Frcyl():
         ['[97*]-C1=CN=CC(-[99*])=C1', 4.4, -1], # 3-pyridylboronic acid DOI:10.1039/c7sc01905j 
         ['O-C(=O)-C1=NC=C(-[99*])C=C1-[97*]', 4.2, -1], # 5-boronopicolinic acid DOI:10.1039/c7sc01905j 
         ['O-C(=O)-C1=CC=C(-[99*])C=[N+]1-C-[97*]', 4.2, -1], # 5-boronopicolinic acid DOI:10.1039/c7sc01905j 
-        ['C-C-C-N-C(=O)-C1=NC=C(-[99*])C=C1-[97*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
-        ['C-C-C-N-C(=O)-C1=CC=C(-[99*])C=[N+]1-C-[97*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C-N-C(=O)-C1=NC=C(-[99*])C=C1-[97*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        ['C-N-C(=O)-C1=NC=C(-[99*])C=C1-[97*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C-N-C(=O)-C1=CC=C(-[99*])C=[N+]1-C-[97*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        ['C-N-C(=O)-C1=CC=C(-[99*])C=[N+]1-C-[97*]', 4.2, -1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
         ['O-C(=O)-C-[N+]1=CC(-[97*])=CC(-[99*])=C1', 4.4,-1], # 3-borono-1-(carboxymethyl)pyridine DOI:10.1039/c7sc01905j
-        ['C-C-C(=O)-N-C1=CC(-[97*])=CC(-[99*])=C1', 8.3, -1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C(=O)-N-C1=CC(-[97*])=CC(-[99*])=C1', 8.3, -1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        ['C-C(=O)-N-C1=CC(-[97*])=CC(-[99*])=C1', 8.3, -1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
         ['CS(=O)(=O)C1=CC=C(-[99*])C=C1-[97*]', 7.1,-1], # 4-(methylsulfonyl)benzeneboronic acid DOI:10.1039/c7sc01905j pKa approx   
         ['FC1=NC=C(-[97*])C=C1-[99*]', 6.3,-1], # 2-Fluoro-3-pyridyl boronic acid DOI:10.1039/c7sc01905j
         ['FC1=C(-[99*])C=CC=[N+]1-C-[97*]', 6.3,-1]] # 2-Fluoro-3-pyridyl boronic acid DOI:10.1039/c7sc01905j
@@ -298,7 +314,8 @@ def Frcyl():
         ['N-C1=C(-[97*])C(-[99*])=CC=C1-[N+](-[O-])=O', 7.1,-1], # (3-amino-4nitrophenyl)boronic acid DOI: 10.1016/S1872-2040(07)60007-3 Binding to silica the amino group
         ['[97*]-C1=C(-[99*])C=CC=C1-N-C(=O)-C=C', 8.2,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K
         ['[97*]-C1=CC=C(-N-C(=O)-C=C)C=C1-[99*]', 8.2,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K
-        ['[97*]-C1=CC(=CC=C1-[99*])-C(=O)-N-C-C-N-C(=O)-C=C', 7.8 ,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)  See the review DOI: 10.1039/C5CS00013K
+        #['[97*]-C1=CC(=CC=C1-[99*])-C(=O)-N-C-C-N-C(=O)-C=C', 7.8 ,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)  See the review DOI: 10.1039/C5CS00013K
+        ['[97*]-C1=CC(=CC=C1-[99*])-C(=O)-N-C', 7.8 ,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)  See the review DOI: 10.1039/C5CS00013K
         ['FC1=CC(-[97*])=C(-[99*])C(F)=C1-C=O', 6.5,-1], # 2,4-difluoro-3-formyl-phenylboronicacid (DFFPBA) See the review DOI: 10.1039/C5CS00013K
         #['[97*]-c1cccc2-[#6]-[#8]-[99*]-c12', 7.2,0], # Benzoboroxole DOI: 10.1021/jo800788s Bonding with trans 4-6 diols prefered over trans 3-4 diol as in glucose.
         #['[#8]-[#6](=O)-c1ccc2-[#6]-[#8]-[99*]-c2c1-[97*]', 7.2,0], # Benzoboroxolebenzaldehide Binding to polimer throug carboxilic acid. Asummed to be similar to Benzoboroxole DOI: 10.1021/jo800788s
@@ -312,12 +329,16 @@ def Frcyl():
         ['[97*]-C1=NC=CC=C1-[99*]',  4.4, -1],  # 3-pyridylboronic acid DOI:10.1039/c7sc01905j
         ['O-C(=O)-C1=CC(-[97*])=C(-[99*])C=N1', 4.2, -1], # 5-boronopicolinic acid DOI:10.1039/c7sc01905j
         ['O-C(=O)-C1=CC=C(-[99*])C(-[97*])=N1', 4.2, -1], # 5-boronopicolinic acid DOI:10.1039/c7sc01905j
-        ['C-C-C-N-C(=O)-C1=CC(-[97*])=C(-[99*])C=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
-        ['C-C-C-N-C(=O)-C1=CC=C(-[99*])C(-[97*])=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C-N-C(=O)-C1=CC(-[97*])=C(-[99*])C=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        ['C-N-C(=O)-C1=CC(-[97*])=C(-[99*])C=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C-N-C(=O)-C1=CC=C(-[99*])C(-[97*])=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
+        ['C-N-C(=O)-C1=CC=C(-[99*])C(-[97*])=N1', 4.2,-1], # (6-propylcarbamoyl)pyridine-3-boronic acid DOI:10.1039/c7sc01905j
         ['O-C(=O)-C-[N+]1=CC=CC(-[99*])=C1-[97*]', 4.4,-1], # 3-borono-1-(carboxymethyl)pyridine DOI:10.1039/c7sc01905j
         ['O-C(=O)-C-[N+]1=CC=C(-[97*])C(-[99*])=C1', 4.4,-1], # 3-borono-1-(carboxymethyl)pyridine DOI:10.1039/c7sc01905j
-        ['C-C-C(=O)-N-C1=CC=C(-[97*])C(-[99*])=C1', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
-        ['C-C-C(=O)-N-C1=CC=CC(-[99*])=C1-[97*]', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C(=O)-N-C1=CC=C(-[97*])C(-[99*])=C1', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        ['C-C(=O)-N-C1=CC=C(-[97*])C(-[99*])=C1', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        #['C-C-C(=O)-N-C1=CC=CC(-[99*])=C1-[97*]', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
+        ['C-C(=O)-N-C1=CC=CC(-[99*])=C1-[97*]', 8.3,-1], # 3-propionamidophenylboronic acid DOI:10.1039/c7sc01905j
         ['CS(=O)(=O)C1=CC=C(-[99*])C=C1-[97*]', 7.1,-1], # 4-(methylsulfonyl)benzeneboronic acid DOI:10.1039/c7sc01905j pKa approx
         ['FC1=NC=CC(-[97*])=C1-[99*]', 6.3,-1]] # 2-Fluoro-3-pyridyl boronic acid DOI:10.1039/c7sc01905j 
         
@@ -337,12 +358,14 @@ def Frcyl():
         ['[O-]-[N+](=O)-C1=CC(-[99*])=CC=C1-[97*]', 7.1,-1], # 3-Nitrophenylboronic acid 1 DOI:10.1016/j.tet.2004.08.051
         ['FC1=CC(-[99*])=C(F)C=C1-[97*]', 7.0,-1], # 2,5-Diflourophenylboronic acid DOI:10.1016/j.tet.2004.08.051
         ['[O-]-[N+](=O)-C1=CC(-[99*])=C(F)C=C1-[97*]', 6.0,-1], # 2-Fluoro-5-nitrophenylboronic acid DOI:10.1016/j.tet.2004.08.051        
-        ['[97*]-C-[N+]1=CC=C(-[99*])C=C1', 4.4,-1], # 4-Methylpyridineboronic acid DOI:10.1016/j.tet.2004.08.051
+        ['[97*]-C[N+]1=CC=C(-[99*])C=C1', 4.4,-1], # 4-Methylpyridineboronic acid DOI:10.1016/j.tet.2004.08.051
         ['[97*]-C1=CC=C(-[99*])C(-C=O)=C1', 7.31,-1], # 2-Formylphenilboronic acid DOI:10.3390/molecules25040799
         ['FC1=CC(-[99*])=CC=C1-[97*]', 7.5,-1], # 3-Fluorophenilboronic acid DOI:10.3390/molecules25040799
         ['FC(F)(F)C1=CC(-[99*])=CC=C1-[97*]', 7.85,-1], # 3-Metiltrifluorophenilboronic acid DOI:10.3390/molecules25040799
-        ['[97*]-C1=CC=C(-[99*])C=C1-N-C(=O)-C=C', 8.2 ,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K 
-        ['[97*]-C1=CC=C(-[99*])C=C1-C(=O)-N-C-C-N-C(=O)-C=C',7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)
+        #['[97*]-C1=CC=C(-[99*])C=C1-N-C(=O)-C=C', 8.2 ,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K
+        ['[97*]-C1=CC=C(-[99*])C=C1-N-C(=O)-C', 8.2 ,-1], # 3-acrylamidophenylboronic acid (AAPBA) See the review DOI: 10.1039/C5CS00013K 
+        #['[97*]-C1=CC=C(-[99*])C=C1-C(=O)-N-C-C-N-C(=O)-C=C',7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)
+        ['[97*]-C1=CC=C(-[99*])C=C1-C(=O)-N-C',7.8,-1], # 4-(1,6-dioxo-2,5-diaza-7-oxamyl-)-phenylboronic acid (DDOPPA)
         #['[97*]-c1ccc2-[99*]-[#8]-[#6]-c2c1'. 7.2,0], # Benzoboroxole DOI: 10.1021/jo800788s Bonding with trans 4-6 diols prefered over trans 3-4 diol as in glucose.
         #['[#8]-[#6](=O)-c1cc2-[99*]-[#8]-[#6]-c2cc1-[97*]', 7.2,0], # Benzoboroxolebenzaldehide Binding to polimer throug carboxilic acid. Asummed to be similar to Benzoboroxole DOI: 10.1021/jo800788s
         ['FC1=NC(-[97*])=CC=C1-[99*]', 7.1,-1], # 2-fluoro-3-pyridylboronic acid or 2F-3-PyBA DOI: 10.1021/ol5036003
