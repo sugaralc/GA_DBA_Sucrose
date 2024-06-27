@@ -348,9 +348,8 @@ def molecular_free_energy(
     core_filepath = os.path.join(censo_dirpath, "coord_enso_best.xyz")
     atoms, charge_read, coordinates = x2m.read_xyz_file(core_filepath)
     raw_mol = x2m.xyz2mol(atoms, coordinates, charge=charge_read)
-    core = raw_mol[0]
-    core = Chem.RemoveHs(core)
-    mol_censo_best = Chem.MolFromSmiles(Chem.MolToSmiles(core))
+    mol_censo_best = raw_mol[0]
+    mol_censo_best = Chem.RemoveHs(mol_censo_best)
 
 # LogP calculation if required    
     LogP = 0

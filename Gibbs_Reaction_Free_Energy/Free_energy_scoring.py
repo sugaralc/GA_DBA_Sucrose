@@ -11,6 +11,7 @@ sys.path.append(free_energy_dir)
 from make_structures import constrained_conformer_generation, free_ligand_conformer_generation, conformer_generation
 from utils import hartree2kcalmol
 from CREST_CENSO_utils import molecular_free_energy
+import xyz2mol as x2m
 
 suc_core_file = os.path.join(free_energy_dir, "Sucrose_core_dummies.mol")
 suc_core = Chem.MolFromMolFile(suc_core_file, removeHs=False, sanitize=True)
@@ -56,6 +57,7 @@ def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
             smiles=None,
             name=f"{idx[0]:03d}_{idx[1]:03d}_complex",
             calc_LogP_OW=False,
+            mdtime="x0.02",
             #input=os.path.join(catalyst_dir, "input_files/constr.inp"),
             numThreads=ncpus,
             cleanup=cleanup,
@@ -63,6 +65,11 @@ def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
     except Exception as e:
         print(f"Error calculating the free energy and S_conf for {idx[0]:03d}_{idx[1]:03d}_complex: {e}")
         return np.nan, np.nan
+
+    #atoms, charge_read, coordinates = x2m.read_xyz_file("/scratch/glara/GA_DBA-Sucrose_job_75589/000_014_complex/censo_job/coord_enso_best.xyz")
+    #raw_mol = x2m.xyz2mol(atoms, coordinates, charge=charge_read)
+    #censo_best = raw_mol[0]
+    #censo_best = Chem.RemoveHs(censo_best)
 
     # Embed free ligand. Here Perform the conformer generation for the free ligand.
     tweezer_3d = free_ligand_conformer_generation(
@@ -79,6 +86,7 @@ def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
             smiles=linker,
             name=f"{idx[0]:03d}_{idx[1]:03d}_tweezer",
             calc_LogP_OW=True,
+            mdtime="x0.02",
             #input=os.path.join(catalyst_dir, "input_files/constr.inp"),
             numThreads=ncpus,
             cleanup=cleanup,
@@ -118,8 +126,9 @@ if __name__ == "__main__":
     #linker_smi = '[98*]C1=C([C@H]2CC=CC3=C2CC2=C3CC3=C([99*])C=CC=C3C2)C=CN=C1F'
     #linker_smi = '[98*]C1=CC=CC([C@@H]2CC[C@]3(CC[C@H](C4=CC([99*])=CC=C4)C(=C)C3)C2)=C1'
     #linker_smi = '[98*]C1=CC=CC=C1[C@@H]1CC[C@@]2(C=C(C3=CC([99*])=CC=C3)CC2)C1'
-    linker_smi = '[98*]c1ccc([C@@H]2C=CC[C@]3(CC[C@@H](c4cccc([99*])c4)C(=C)C3)C2)cc1'
+    #linker_smi = '[98*]c1ccc([C@@H]2C=CC[C@]3(CC[C@@H](c4cccc([99*])c4)C(=C)C3)C2)cc1'
+    linker_smi = '[98*]C1=CC(CCCC2=CC([99*])=CC=C2)=CC=C1'
     #linker_smi = 'CCCC'
     linker = Chem.MolFromSmiles(linker_smi)
     #complex_conformer_generation(linker)
-    Free_energy_scoring(linker,ncpus=38,idx=(0,7))
+    Free_energy_scoring(linker,ncpus=38,idx=(0,14))
