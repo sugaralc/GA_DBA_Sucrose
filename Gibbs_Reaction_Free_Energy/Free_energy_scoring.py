@@ -41,14 +41,18 @@ def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
 
     # Embed Complex. Here Perform the conformer generation for the complex. 
     # Pending, add the options used for the conformer generation.
-    complex_3d = constrained_conformer_generation(
-        mol=linker,
-        core=suc_core,
-        sucrose=True,
-        #numConfs=n_confs,
-        #pruneRmsThresh=0.1,
-        #force_constant=1e12,
-    )
+    try:
+        complex_3d = constrained_conformer_generation(
+            mol=linker,
+            core=suc_core,
+            sucrose=True,
+            #numConfs=n_confs,
+            #pruneRmsThresh=0.1,
+            #force_constant=1e12,
+        )
+    except Exception as e:
+        print(f"Could not generate the constrained conformer for complex {idx[0]:03d}_{idx[1]:03d}_complex: {e}")
+        return np.nan, np.nan
 
     try:
         complex_free_energy, complex_S_conf, _, censo_best = molecular_free_energy(
@@ -72,12 +76,16 @@ def Free_energy_scoring(linker, idx=(0, 0), ncpus=1, cleanup=False):
     #censo_best = Chem.RemoveHs(censo_best)
 
     # Embed free ligand. Here Perform the conformer generation for the free ligand.
-    tweezer_3d = free_ligand_conformer_generation(
-        mol=censo_best,
-        #pruneRmsThresh=0.1,
-        #force_constant=1e12,
-    )
+    try:
+        tweezer_3d = free_ligand_conformer_generation(
+            mol=censo_best,
+            #pruneRmsThresh=0.1,
+            #force_constant=1e12,
+        )
     #tweezer_3d = conformer_generation(mol=linker)
+    except Exception as e:
+        print(f"Could not generate the constrained conformer for complex {idx[0]:03d}_{idx[1]:03d}_complex: {e}")
+        return np.nan, np.nan
 
     try:
         tweezer_free_energy, tweezer_S_conf, LogP, _ = molecular_free_energy(
