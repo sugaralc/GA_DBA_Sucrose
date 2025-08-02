@@ -77,7 +77,7 @@ def catch(func, *args, handle=lambda e: e, **kwargs):
         return handle(e)
 
 
-def make_initial_population(population_size, directory, rand=True): #Here I should use my implementation with xyz files to Chem.Mol
+def make_initial_population(population_size, directory, rand=False): #Here I should use my implementation with xyz files to Chem.Mol
     if rand:
         sample = heapq.nlargest(population_size, os.listdir(directory), key=lambda L: random.random())
     else:
@@ -251,6 +251,8 @@ def GA(args):
     
     #print(len(smiles))
     #molecules = [Chem.MolFromSmiles(mol) for mol in smiles] #Here write the function of ligands assigning the values of pKa
+    
+
     #for mol in molecules:
     #    mol.SetProp('pKaglcyl',str(8.8))
     #    mol.SetProp('pKafrcyl',str(8.8))
@@ -436,7 +438,7 @@ def GA(args):
             count_score_best += 1
             
         print("Generation, score_best, count_score_best")
-        print(generation+1, score_best, count_score_best)
+        print(generation, score_best, count_score_best)
 
 
     with open(str(generations_file.resolve()), "w+") as f:
@@ -450,13 +452,14 @@ if __name__ == "__main__":
 
     co.average_size = 40.022840038202613
     co.size_stdev = 4.230907997270275
-    population_size = 32
-    molecules_directory = package_directory / "linkers32_4tunning"
+    population_size = 1
+    #molecules_directory = package_directory / "linkers32_4tunning"
+    molecules_directory = package_directory / "tweezer_29"
     #file_name = package_directory / "ZINC_amines.smi"
     scoring_function = Free_energy_scoring 
-    generations = 50
+    generations = 0
     mating_pool_size = round(population_size*0.5)
-    mutation_rate = 0.8
+    mutation_rate = 0.5
     scoring_args = None
     prune_population = True
 
@@ -468,7 +471,7 @@ if __name__ == "__main__":
 
     minimization = True
     selection_method = "rank"
-    selection_pressure = 1.8
+    selection_pressure = 1.5
     molecule_filters = filters.get_molecule_filters(
         ["MBH"], package_directory / "filters/alert_collection.csv"
     ) 
